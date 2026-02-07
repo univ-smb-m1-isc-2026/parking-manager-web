@@ -9,6 +9,20 @@ export default function Home() {
       >
         Aller à la page Hello
       </Link>
+
+      <Link
+        href="/signIn"
+        className="rounded bg-black px-6 py-3 text-white hover:bg-gray-800"
+      >
+        Aller à la page signIn
+      </Link>
+
+      <Link
+        href="/signUp"
+        className="rounded bg-black px-6 py-3 text-white hover:bg-gray-800"
+      >
+        Aller à la page signUp
+      </Link>
     </div>
   );
 }
