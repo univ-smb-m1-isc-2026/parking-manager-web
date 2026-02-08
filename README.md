@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Titre
 
-## Getting Started
+## But :
 
-First, run the development server:
+Nous nous lançons dans le business de la gestion de parking pour les entreprises.
+Nous avons besoin d'une application clef en main pour gérer les places de parking de nos clients et leurs attributions a leurs salariés.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* Pitch
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Participants
+* LOY Lenny @BillyBoy16
+* Hebert Lohan @lohan5555
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Repositories links
+* Front
+* Back
 
-## Learn More
+## Fonctionnalités
 
-To learn more about Next.js, take a look at the following resources:
+* En tant qu'entreprise je peux m'enregistrer sur la platform, je peux y déclarer un ou plusieurs parkings
+* Le parking a un nom, une description, un lien Google Maps, toutes ces informations sont publiées sur une page publique.
+* Le parking contient une liste de places identifiées par un numéro
+* je peux inviter mes salariés à s'inscrire sur la platform par mail
+* je peux confirmer la demande de place permanente d'un salarié (les place temporaire sont automatiquement confirmées dans la limite des places disponibles)
+* une place permanente a un tarif annuel
+* une place temporaire a un tarif journalier
+ 
+  
+* en tant que salarié d'une entreprise, je peux m'enregistrer sur la platform avec social login, je peux y déclarer l'immatriculation de mes véhicules
+* je peux demander uen place permanante dans un parking identifié (je ne peux pas demander une place dans un parking qui n'appartient pas à mon entreprise)
+* je peux demander une place temporaire dans un parking identifié appartenant à mon entreprise
+* je peux temporairement libérer ma place permanente pour une période donnée (chaque jour libéré est remboursé au prorata sur le tarif annuel).
+* chaque mois, je reçois un mail avec le montant correspondant à mon utilisation des places de parking
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Il n'est pas demandé de paiement en ligne
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Critères & Evaluation
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* attention : ce sujet est techniquement simple, mais relativement volumineux a implementer
