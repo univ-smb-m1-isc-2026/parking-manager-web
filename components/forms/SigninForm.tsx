@@ -13,6 +13,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { login } from "@/app/actions/auth";
+import { useActionState } from "react";
 
 const styles = {
   container: "w-full max-w-md",
@@ -24,12 +26,15 @@ const styles = {
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
   link: "ml-2 text-pink-500",
+  error: "text-xs text-red-600"
 };
 
 export function SigninForm() {
+  const [state, action] = useActionState(login, null);
+
   return (
     <div className={styles.container}>
-      <form>
+      <form action={action}>
         <Card>
           <CardHeader className={styles.header}>
             <CardTitle className={styles.title}>Sign In</CardTitle>
@@ -45,7 +50,9 @@ export function SigninForm() {
                 name="identifier"
                 type="text"
                 placeholder="username or email"
+                defaultValue={state?.values?.identifier ?? ""}
               />
+              {state?.error && "identifier" in state.error && (<p className={styles.error}>{state.error.identifier}</p>)}
             </div>
             <div className={styles.fieldGroup}>
               <Label htmlFor="password">Password</Label>
@@ -55,14 +62,16 @@ export function SigninForm() {
                 type="password"
                 placeholder="password"
               />
+              {state?.error && "password" in state.error && (<p className={styles.error}>{state.error.password}</p>)}
+              {state?.error && "global" in state.error && (<p className={styles.error}>{state.error.global}</p>)}
             </div>
           </CardContent>
           <CardFooter className={styles.footer}>
-            <Button className={styles.button}>Sign In</Button>
+            <Button type="submit" className={styles.button}>Sign In</Button>
           </CardFooter>
         </Card>
         <div className={styles.prompt}>
-          Don&apos;t have an account?
+          Don't have an account?
           <Link className={styles.link} href="signUp">
             Sign Up
           </Link>

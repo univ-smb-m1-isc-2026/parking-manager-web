@@ -13,6 +13,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { signUp } from "@/app/actions/auth";
+import { useActionState } from "react";
 
 const styles = {
   container: "w-full max-w-md",
@@ -24,12 +26,15 @@ const styles = {
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
   link: "ml-2 text-pink-500",
+  error: "text-xs text-red-600"
 };
 
 export function SignupForm() {
+  const [state, action] = useActionState(signUp, null);
+
   return (
     <div className={styles.container}>
-      <form>
+      <form action={action}>
         <Card>
           <CardHeader className={styles.header}>
             <CardTitle className={styles.title}>Sign Up</CardTitle>
@@ -39,13 +44,15 @@ export function SignupForm() {
           </CardHeader>
           <CardContent className={styles.content}>
             <div className={styles.fieldGroup}>
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="identifier">Username</Label>
               <Input
-                id="username"
-                name="username"
+                id="identifier"
+                name="identifier"
                 type="text"
-                placeholder="username"
+                placeholder="identifier"
+                defaultValue={state?.values?.identifier ?? ""}
               />
+               {state?.error && "identifier" in state.error && (<p className={styles.error}>{state.error.identifier}</p>)}
             </div>
             <div className={styles.fieldGroup}>
               <Label htmlFor="email">Email</Label>
@@ -55,6 +62,7 @@ export function SignupForm() {
                 type="email"
                 placeholder="name@example.com"
               />
+              {state?.error && "email" in state.error && (<p className={styles.error}>{state.error.email}</p>)}
             </div>
             <div className={styles.fieldGroup}>
               <Label htmlFor="password">Password</Label>
@@ -64,10 +72,11 @@ export function SignupForm() {
                 type="password"
                 placeholder="password"
               />
+              {state?.error && "password" in state.error && (<p className={styles.error}>{state.error.password}</p>)}
             </div>
           </CardContent>
           <CardFooter className={styles.footer}>
-            <Button className={styles.button}>Sign Up</Button>
+            <Button type="submit" className={styles.button}>Sign Up</Button>
           </CardFooter>
         </Card>
         <div className={styles.prompt}>
