@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 export async function login(_: any, formData: FormData) {
   const result = signInSchema.safeParse({
-    identifier: formData.get("identifier"),
+    mail: formData.get("mail"),
     password: formData.get("password"),
   });
 
@@ -14,33 +14,42 @@ export async function login(_: any, formData: FormData) {
     return { 
       error: result.error.flatten().fieldErrors,
       values: {
-        identifier: formData.get("identifier")?.toString() ?? "",
+        mail: formData.get("mail")?.toString() ?? "",
       }
     };
   }
 
-  const { identifier, password } = result.data;
+  const { mail, password } = result.data;
 
-  // TODO: vrai appel API
-  if (identifier === "admin" && password === "admin") {
-    redirect("/employeur");
-  } else if (identifier === "user" && password === "user"){
-    redirect("/salarier");
-  }
+  try {
+    const response = await fetch("http://localhost:8080/api/auth/login-entreprise", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(result.data),
+    });
 
-  return { 
-    error: { 
-      global: "Invalid password" 
-    },
-    values: {
-      identifier,
-    }, 
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        error: { global: errorData.message || "Identifiant incorrect" },
+        values: result.data,
+      };
+    }
+
+  } catch (error) {
+    return {
+      error: { global: "Impossible de contacter le serveur." },
+      values: result.data,
+    };
   };
+  
+  redirect("/employeur");
 }
 
 
 export async function signUp(_: any, formData: FormData) {
-  console.log("appel de signUp");
   const result = signUpSchema.safeParse({
     mail: formData.get("mail"),
     password: formData.get("password"),
@@ -49,7 +58,7 @@ export async function signUp(_: any, formData: FormData) {
     surname: formData.get("surname"),
   });
 
-  //si le données entrée par l'utilisateur sont incorrect on les renvoient pour ne pas vider le formulaire
+  //si le données entrée par l'utilisateur sont incorrect, on les renvoient pour ne pas vider le formulaire
   if (!result.success) {
     return {
       error: result.error.flatten().fieldErrors,
@@ -86,6 +95,5 @@ export async function signUp(_: any, formData: FormData) {
   };
   
   redirect("/employeur");
-  
 }
 

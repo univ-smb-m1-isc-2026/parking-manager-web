@@ -44,15 +44,15 @@ export function SigninForm() {
           </CardHeader>
           <CardContent className={styles.content}>
             <div className={styles.fieldGroup}>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="mail">Email</Label>
               <Input
-                id="identifier"
-                name="identifier"
+                id="mail"
+                name="mail"
                 type="text"
-                placeholder="username or email"
-                defaultValue={state?.values?.identifier ?? ""}
+                placeholder="email"
+                defaultValue={state?.values?.mail ?? ""}
               />
-              {state?.error && "identifier" in state.error && (<p className={styles.error}>{state.error.identifier}</p>)}
+              {state?.error && "mail" in state.error && (<p className={styles.error}>{state.error.mail}</p>)}
             </div>
             <div className={styles.fieldGroup}>
               <Label htmlFor="password">Password</Label>
