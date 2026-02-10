@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Parking Manager",
   description: "A parking management application for employers and employees.",
+  icons: {
+    icon: '/icon.png',
+  }
 };
 
 export default function RootLayout({

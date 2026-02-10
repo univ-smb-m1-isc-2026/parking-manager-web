@@ -12,6 +12,7 @@ import {
   Plus,
   Euro
 } from 'lucide-react';
+import Image from 'next/image';
 
 // --- DONNÉES DE DÉMO (MOCK) ---
 const DATA = {
@@ -70,9 +71,27 @@ export default function Dashboard() {
       
       {/* --- SIDEBAR / NAVIGATION --- */}
       <nav className="fixed top-0 left-0 w-64 h-full bg-slate-900 text-white flex flex-col">
-        <div className="p-6 border-b border-slate-700">
-          <h1 className="text-xl font-bold tracking-wider">PARK MANAGER</h1>
-          <p className="text-xs text-slate-400 mt-1">{DATA.companyName}</p>
+        {/* Partie Logo + Titre modifiée */}
+        <div className="p-6 border-b border-slate-700 flex items-center gap-3">
+          {/* Conteneur de l'image */}
+          <div className="relative h-20 w-20 flex-shrink-0">
+            <Image 
+              src="/parking_manager.png" 
+              alt="Logo Entreprise"
+              fill
+              className="object-contain rounded-lg"
+            />
+          </div>
+          
+          {/* Texte à côté */}
+          <div>
+            <h1 className="text-sm font-bold tracking-wide text-white">
+              {DATA.companyName}
+            </h1>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest">
+              Manager
+            </p>
+          </div>
         </div>
         
         <div className="flex-1 py-6 space-y-2 px-3">
