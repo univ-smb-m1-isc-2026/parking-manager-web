@@ -40,23 +40,52 @@ export async function login(_: any, formData: FormData) {
 
 
 export async function signUp(_: any, formData: FormData) {
+  console.log("appel de signUp");
   const result = signUpSchema.safeParse({
-    identifier: formData.get("identifier"),
-    email: formData.get("email"),
+    mail: formData.get("mail"),
     password: formData.get("password"),
+    nomEntreprise: formData.get("nomEntreprise"),
+    name: formData.get("name"),
+    surname: formData.get("surname"),
   });
 
+  //si le données entrée par l'utilisateur sont incorrect on les renvoient pour ne pas vider le formulaire
   if (!result.success) {
     return {
       error: result.error.flatten().fieldErrors,
       values: {
-        identifier: formData.get("identifier")?.toString() ?? "",
+        name: formData.get("name")?.toString() ?? "",
+        surname: formData.get("surname")?.toString() ?? "",
+        nomEntreprise: formData.get("nomEntreprise")?.toString() ?? "",
       },
     };
-  }
+  };
 
-  // TODO: appel API pour enregistrer l'utilisateur
+  try {
+    const response = await fetch("http://localhost:8080/api/auth/register-entreprise", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(result.data),
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        error: { global: errorData.message || "Une erreur est survenue lors de l'inscription." },
+        values: result.data,
+      };
+    }
+
+  } catch (error) {
+    return {
+      error: { global: "Impossible de contacter le serveur." },
+      values: result.data,
+    };
+  };
+  
   redirect("/employeur");
+  
 }
 

@@ -31,7 +31,7 @@ const styles = {
 
 export function SignupForm() {
   const [state, action] = useActionState(signUp, null);
-
+  console.log("appel du form");
   return (
     <div className={styles.container}>
       <form action={action}>
@@ -43,27 +43,54 @@ export function SignupForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className={styles.content}>
+
             <div className={styles.fieldGroup}>
-              <Label htmlFor="identifier">Username</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
-                id="identifier"
-                name="identifier"
+                id="name"
+                name="name"
                 type="text"
-                placeholder="identifier"
-                defaultValue={state?.values?.identifier ?? ""}
+                placeholder="name"
+                defaultValue={state?.values?.name ?? ""}
               />
-               {state?.error && "identifier" in state.error && (<p className={styles.error}>{state.error.identifier}</p>)}
+               {state?.error && "name" in state.error && (<p className={styles.error}>{state.error.name}</p>)}
             </div>
+
             <div className={styles.fieldGroup}>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="surname">Surname</Label>
               <Input
-                id="email"
-                name="email"
+                id="surname"
+                name="surname"
+                type="text"
+                placeholder="surname"
+                defaultValue={state?.values?.surname ?? ""}
+              />
+              {state?.error && "surname" in state.error && (<p className={styles.error}>{state.error.surname}</p>)}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <Label htmlFor="nomEntreprise">Name entreprise</Label>
+              <Input
+                id="nomEntreprise"
+                name="nomEntreprise"
+                type="nomEntreprise"
+                placeholder="Name enterprise"
+                defaultValue={state?.values?.nomEntreprise ?? ""}
+              />
+              {state?.error && "nomEntreprise" in state.error && (<p className={styles.error}>{state.error.nomEntreprise}</p>)}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <Label htmlFor="mail">Mail</Label>
+              <Input
+                id="mail"
+                name="mail"
                 type="email"
                 placeholder="name@example.com"
               />
-              {state?.error && "email" in state.error && (<p className={styles.error}>{state.error.email}</p>)}
+              {state?.error && "mail" in state.error && (<p className={styles.error}>{state.error.mail}</p>)}
             </div>
+
             <div className={styles.fieldGroup}>
               <Label htmlFor="password">Password</Label>
               <Input
@@ -74,6 +101,7 @@ export function SignupForm() {
               />
               {state?.error && "password" in state.error && (<p className={styles.error}>{state.error.password}</p>)}
             </div>
+
           </CardContent>
           <CardFooter className={styles.footer}>
             <Button type="submit" className={styles.button}>Sign Up</Button>
