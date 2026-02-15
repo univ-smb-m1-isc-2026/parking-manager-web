@@ -11,12 +11,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Si on a un token et qu'on essaie d'aller sur Login ou Inscription -> Hop, au dashboard
-  if (token && (pathname === "/signIn" || pathname === "/inscription")) {
+  if (token && (pathname === "/signIn" || pathname === "/signUp")) {
     return NextResponse.redirect(new URL("/employeur", request.url));
   }
 
   // Liste des routes publiques (accessibles sans token)
-  const publicPaths = ["/signIn", "/inscription"];
+  const publicPaths = ["/signIn", "/signUp"];
   
   // Est-ce que l'utilisateur est sur une route publique ?
   const isPublicPath = publicPaths.includes(pathname);
