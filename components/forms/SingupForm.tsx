@@ -1,5 +1,8 @@
 "use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   CardTitle,
@@ -13,8 +16,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { signUp } from "@/app/actions/auth";
-import { useActionState } from "react";
 
 const styles = {
   container: "w-full max-w-md",
@@ -26,15 +27,55 @@ const styles = {
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
   link: "ml-2 text-pink-500",
-  error: "text-xs text-red-600"
+  error: "text-xs text-red-600",
 };
 
 export function SignupForm() {
-  const [state, action] = useActionState(signUp, null);
-  console.log("appel du form");
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [nomEntreprise, setNomEntreprise] = useState("");
+  const [mail, setMail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/auth/register-entreprise",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            surname,
+            nomEntreprise,
+            mail,
+            password,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        setError(errorText || "Erreur lors de l'inscription.");
+        return;
+      }
+
+      // Après inscription on redirige vers login
+      router.push("/signIn");
+    } catch (err) {
+      setError("Impossible de contacter le serveur.");
+    }
+  }
+
   return (
     <div className={styles.container}>
-      <form action={action}>
+      <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className={styles.header}>
             <CardTitle className={styles.title}>Sign Up</CardTitle>
@@ -42,71 +83,73 @@ export function SignupForm() {
               Enter your details to create a new account
             </CardDescription>
           </CardHeader>
-          <CardContent className={styles.content}>
 
+          <CardContent className={styles.content}>
             <div className={styles.fieldGroup}>
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
-                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 type="text"
                 placeholder="name"
-                defaultValue={state?.values?.name ?? ""}
               />
-               {state?.error && "name" in state.error && (<p className={styles.error}>{state.error.name}</p>)}
             </div>
 
             <div className={styles.fieldGroup}>
               <Label htmlFor="surname">Surname</Label>
               <Input
                 id="surname"
-                name="surname"
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
                 type="text"
                 placeholder="surname"
-                defaultValue={state?.values?.surname ?? ""}
               />
-              {state?.error && "surname" in state.error && (<p className={styles.error}>{state.error.surname}</p>)}
             </div>
 
             <div className={styles.fieldGroup}>
               <Label htmlFor="nomEntreprise">Name entreprise</Label>
               <Input
                 id="nomEntreprise"
-                name="nomEntreprise"
-                type="nomEntreprise"
+                value={nomEntreprise}
+                onChange={(e) => setNomEntreprise(e.target.value)}
+                type="text"
                 placeholder="Name enterprise"
-                defaultValue={state?.values?.nomEntreprise ?? ""}
               />
-              {state?.error && "nomEntreprise" in state.error && (<p className={styles.error}>{state.error.nomEntreprise}</p>)}
             </div>
 
             <div className={styles.fieldGroup}>
               <Label htmlFor="mail">Mail</Label>
               <Input
                 id="mail"
-                name="mail"
+                value={mail}
+                onChange={(e) => setMail(e.target.value)}
                 type="email"
                 placeholder="name@example.com"
               />
-              {state?.error && "mail" in state.error && (<p className={styles.error}>{state.error.mail}</p>)}
             </div>
 
             <div className={styles.fieldGroup}>
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
-                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 placeholder="password"
               />
-              {state?.error && "password" in state.error && (<p className={styles.error}>{state.error.password}</p>)}
             </div>
 
+            {error && <p className={styles.error}>{error}</p>}
           </CardContent>
+
           <CardFooter className={styles.footer}>
-            <Button type="submit" className={styles.button}>Sign Up</Button>
+            <Button type="submit" className={styles.button}>
+              Sign Up
+            </Button>
           </CardFooter>
         </Card>
+
         <div className={styles.prompt}>
           Have an account?
           <Link className={styles.link} href="signIn">
