@@ -1,11 +1,11 @@
-"use server";
+"use client";
 
 import { signInSchema } from "@/lib/schemas/auth";
 import { signUpSchema } from "@/lib/schemas/auth";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
-export async function login(_: any, formData: FormData) {
+async function login(_: any, formData: FormData) {
   const result = signInSchema.safeParse({
     mail: formData.get("mail"),
     password: formData.get("password"),
