@@ -26,6 +26,12 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: install dependancy
+        run: npm ci
+      
+      - name: build
+        run: npm run dev
 
       - name: Extract metadata
         id: meta
