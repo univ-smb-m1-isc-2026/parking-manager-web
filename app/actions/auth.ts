@@ -1,4 +1,4 @@
-"use server";
+/*"use server";
 
 import { signInSchema } from "@/lib/schemas/auth";
 import { signUpSchema } from "@/lib/schemas/auth";
@@ -136,3 +136,4 @@ export async function logout() {
   redirect("/signIn");
 }
 
+*/
