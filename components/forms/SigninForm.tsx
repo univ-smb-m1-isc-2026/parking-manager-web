@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+
 import {
   CardTitle,
   CardDescription,
@@ -38,7 +40,6 @@ export function SigninForm() {
     setError(null);
     setLoading(true);
 
-    // Extraction propre des données du formulaire
     const formData = new FormData(e.currentTarget);
     const mail = formData.get("mail");
     const password = formData.get("password");
@@ -54,20 +55,22 @@ export function SigninForm() {
       );
 
       if (!response.ok) {
-        // Essaye de récupérer le message d'erreur du backend s'il existe
         const errorData = await response.json().catch(() => null);
         throw new Error(errorData?.message || "Identifiants incorrects");
       }
 
       const token = await response.text();
 
-      // Stockage sécurisé par rapport au SSR (vérifie si on est côté client)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("session_token", token);
-        // On utilise replace au lieu de push pour éviter que l'utilisateur 
-        // ne revienne sur le login via le bouton "retour" après connexion
-        router.replace("/employeur");
-      }
+      // Utilisation de js-cookie pour stocker le token
+      Cookies.set("session_token", token, { 
+        expires: 1, // Expire après 1 jour
+        secure: window.location.protocol === "https:", // True si tu es en HTTPS
+        sameSite: "strict", // Empêche l'envoi du cookie lors de requêtes cross-site
+        path: "/" 
+      });
+
+      router.replace("/employeur");
+      
     } catch (err: any) {
       setError(err.message || "Impossible de contacter le serveur.");
     } finally {
