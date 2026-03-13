@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import {
   CardTitle,
   CardDescription,
@@ -12,7 +11,6 @@ import {
   CardFooter,
   Card,
 } from "@/components/ui/card";
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,19 +25,23 @@ const styles = {
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
   link: "ml-2 text-pink-500",
-  error: "text-xs text-red-600",
+  error: "text-xs text-red-600 font-medium",
 };
 
 export function SigninForm() {
   const router = useRouter();
-
-  const [mail, setMail] = useState("");
-  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setLoading(true);
+
+    // Extraction propre des données du formulaire
+    const formData = new FormData(e.currentTarget);
+    const mail = formData.get("mail");
+    const password = formData.get("password");
 
     try {
       const response = await fetch(
@@ -52,18 +54,24 @@ export function SigninForm() {
       );
 
       if (!response.ok) {
-        setError("Identifiants incorrects");
-        return;
+        // Essaye de récupérer le message d'erreur du backend s'il existe
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Identifiants incorrects");
       }
 
       const token = await response.text();
 
-      // stockage côté client (compatible export statique)
-      localStorage.setItem("session_token", token);
-
-      router.push("/employeur");
-    } catch (err) {
-      setError("Impossible de contacter le serveur.");
+      // Stockage sécurisé par rapport au SSR (vérifie si on est côté client)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("session_token", token);
+        // On utilise replace au lieu de push pour éviter que l'utilisateur 
+        // ne revienne sur le login via le bouton "retour" après connexion
+        router.replace("/employeur");
+      }
+    } catch (err: any) {
+      setError(err.message || "Impossible de contacter le serveur.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -84,10 +92,9 @@ export function SigninForm() {
               <Input
                 id="mail"
                 name="mail"
-                type="text"
-                value={mail}
-                onChange={(e) => setMail(e.target.value)}
-                placeholder="email"
+                type="email" // Changé en email pour validation HTML5 native
+                required
+                placeholder="nom@entreprise.com"
               />
             </div>
 
@@ -97,25 +104,28 @@ export function SigninForm() {
                 id="password"
                 name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="password"
+                required
+                placeholder="••••••••"
               />
             </div>
 
-            {error && <p className={styles.error}>{error}</p>}
+            {error && (
+              <div className="p-2 bg-red-50 border border-red-200 rounded">
+                <p className={styles.error}>{error}</p>
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className={styles.footer}>
-            <Button type="submit" className={styles.button}>
-              Sign In
+            <Button type="submit" className={styles.button} disabled={loading}>
+              {loading ? "Connexion..." : "Sign In"}
             </Button>
           </CardFooter>
         </Card>
 
         <div className={styles.prompt}>
           Don't have an account?
-          <Link className={styles.link} href="signUp">
+          <Link className={styles.link} href="/signUp">
             Sign Up
           </Link>
         </div>
