@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { OverviewTab } from "@/components/dashboard/OverviewTab";
 import { ParkingsTab } from "@/components/dashboard/ParkingsTab";
 import { EmployeesTab } from "@/components/dashboard/EmployeesTab";
+import { fetchWithAuth } from "@/lib/api";
+import { getEntrepriseIdFromToken, getUserNameFromToken } from "@/lib/auth";
 // --- DONNÉES DE DÉMO ---
 // Tu peux même déplacer ça dans un fichier lib/data.ts plus tard
 const DATA = {
@@ -88,7 +90,45 @@ const DATA = {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [userName, setUserName] = useState("Admin");
   const [requests, setRequests] = useState(DATA.requests);
+
+  const [parkings, setParkings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const idEntreprise = getEntrepriseIdFromToken();
+    const nameFromToken = getUserNameFromToken();
+
+    if (nameFromToken) setUserName(nameFromToken);
+    if (!idEntreprise) {
+      console.error("Impossible de trouver l'ID de l'entreprise dans le token");
+      setIsLoading(false);
+      return;
+    }
+    async function loadParkings() {
+      try {
+        const response = await fetchWithAuth(
+          `/api/parking/getParkingByEntreprise/${idEntreprise}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setParkings(data);
+        }
+      } catch (error) {
+        console.error("Erreur chargement parkings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadParkings();
+  }, []);
+
+  // On recalcule les stats avec la longueur réelle de la liste
+  const dynamicStats = {
+    ...DATA.stats,
+    totalParkings: parkings.length,
+  };
 
   const handleRequestAction = (id: number, action: string) => {
     setRequests(
@@ -121,26 +161,37 @@ export default function Dashboard() {
             {activeTab === "employees" && "Annuaire Salariés"}
           </h2>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">Bonjour, Admin</span>
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
-              A
+            <span className="text-sm text-gray-500">Bonjour, {userName}</span>
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold uppercase">
+              {userName.charAt(0)}
             </div>
           </div>
         </header>
 
         {/* 3. Conditional Content */}
-        {activeTab === "overview" && (
-          <OverviewTab
-            stats={DATA.stats}
-            requests={requests}
-            onRequestAction={handleRequestAction}
-          />
-        )}
+        {isLoading ? (
+          <div className="flex justify-center p-10">
+            Chargement des données...
+          </div>
+        ) : (
+          <>
+            {/* Vue d'ensemble avec les vraies stats */}
+            {activeTab === "overview" && (
+              <OverviewTab
+                stats={dynamicStats}
+                requests={requests}
+                onRequestAction={handleRequestAction}
+              />
+            )}
 
-        {activeTab === "parkings" && <ParkingsTab parkings={DATA.parkings} />}
+            {/* Onglet Parkings avec les vrais parkings de l'API */}
+            {activeTab === "parkings" && <ParkingsTab parkings={parkings} />}
 
-        {activeTab === "employees" && (
-          <EmployeesTab employees={DATA.employees} />
+            {/* Onglet Salariés (encore sur DATA en attendant le prochain GET) */}
+            {activeTab === "employees" && (
+              <EmployeesTab employees={DATA.employees} />
+            )}
+          </>
         )}
       </main>
     </div>

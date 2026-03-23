@@ -1,0 +1,37 @@
+import Cookies from 'js-cookie';
+
+export function getEntrepriseIdFromToken(): number | null {
+  const token = Cookies.get('session_token');
+  if (!token) return null;
+
+  try {
+    // Le payload est la 2ème partie du JWT (index 1)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    
+    return payload.idEntreprise || payload.id || null;
+  } catch (error) {
+    console.error("Erreur lors du décodage du token:", error);
+    return null;
+  }
+}
+
+export function getUserNameFromToken(): string {
+  const token = Cookies.get('session_token');
+  if (!token) return "Admin";
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.name || "Admin";
+  } catch {
+    return "Admin";
+  }
+}
