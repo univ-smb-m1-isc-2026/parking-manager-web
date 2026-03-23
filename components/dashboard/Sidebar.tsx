@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AlertCircle, Car, Users, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Cookies from 'js-cookie';
 
 interface SidebarProps {
   activeTab: string;
@@ -20,8 +21,8 @@ export function Sidebar({ activeTab, setActiveTab, companyName }: SidebarProps) 
   ];
 
   function handleLogout() {
-    // Supprime le token stocké côté client
-    localStorage.removeItem("session_token");
+    // Supprime le token stocké
+    Cookies.remove("session_token");
 
     // Redirection vers la page login
     router.push("/signIn");
