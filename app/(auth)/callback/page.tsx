@@ -2,36 +2,47 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/client";=
 
 export default function AuthCallback() {
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    const handleAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error(error);
-        router.replace("/signInSalarier");
-        return;
+    // 1. On écoute les changements d'état d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          console.log("Connexion réussie :", session.user);
+          router.replace("/salarier");
+        } else if (event === "INITIAL_SESSION") {
+            // Si la session est déjà là au chargement
+            if (session) {
+                router.replace("/salarier");
+            }
+        }
       }
+    );
 
-      if (data.session) {
-        console.log("User connecté :", data.session.user);
+    // 2. Sécurité : si après 5 secondes rien ne se passe, on redirige vers le login
+    const timeout = setTimeout(() => {
+        supabase.auth.getSession().then(({ data }) => {
+            if (!data.session) router.replace("/signInSalarier");
+        });
+    }, 5000);
 
-        router.replace("/salarier");
-      } else {
-        router.replace("/signInSalarier");
-      }
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-
-    handleAuth();
-  }, [router]);
+  }, [router, supabase]);
 
   return (
     <div className="flex h-screen items-center justify-center">
-      <p>Connexion en cours...</p>
+      <div className="text-center">
+        <p className="text-lg font-semibold">Finalisation de la connexion...</p>
+        <p className="text-sm text-gray-500">Veuillez patienter.</p>
+      </div>
     </div>
   );
 }
