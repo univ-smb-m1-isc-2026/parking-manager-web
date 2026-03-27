@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/logout-button'
-// Importe ton client Supabase version NAVIGATEUR (browser)
-import { createClient } from '@/utils/supabase/client' 
+import { createClient } from '@/lib/client' 
 
 export default function ProtectedPage() {
   const [user, setUser] = useState<any>(null)
