@@ -12,7 +12,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = Cookies.get('session_token');
     
-    const publicPaths = ['/signIn', '/signUp', '/'];
+    const publicPaths = ['/signIn', '/signUp', '/', '/signInSalarier'];
     const isPublicPath = publicPaths.includes(pathname);
 
     if (!token && !isPublicPath) {
@@ -25,7 +25,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   if (!isAuthorized) {
-    return null; // mettre un <LoadingSpinner /> ici
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Chargement...</p>
+      </div>
+    );
   }
 
   return <>{children}</>;
