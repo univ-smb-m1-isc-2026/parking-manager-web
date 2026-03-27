@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/client";=
+import { createClient } from "@/lib/client";
 
 export default function AuthCallback() {
   const router = useRouter();
