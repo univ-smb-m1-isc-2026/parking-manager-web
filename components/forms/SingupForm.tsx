@@ -46,7 +46,7 @@ export function SignupForm() {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/auth/login-entreprise",
+        "https://parking-manager-api.oups.net/api/auth/login-entreprise",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

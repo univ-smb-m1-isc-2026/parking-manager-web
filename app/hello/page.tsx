@@ -10,7 +10,7 @@ export default function HelloPage() {
   const callBackend = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/coucou");
+      const response = await fetch("https://parking-manager-api.oups.net/api/coucou");
       const text = await response.text();
       setMessage(text);
     } catch (error) {
