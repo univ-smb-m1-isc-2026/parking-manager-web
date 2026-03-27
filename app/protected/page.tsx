@@ -1,23 +1,34 @@
-export const dynamic = 'force-dynamic'
+'use client' // <--- TRÈS IMPORTANT
 
-import { redirect } from 'next/navigation'
-
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { LogoutButton } from '@/components/logout-button'
-import { createClient } from '@/lib/server'
+// Importe ton client Supabase version NAVIGATEUR (browser)
+import { createClient } from '@/utils/supabase/client' 
 
-export default async function ProtectedPage() {
-  const supabase = await createClient()
+export default function ProtectedPage() {
+  const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
-  const { data, error } = await supabase.auth.getClaims()
-  if (error || !data?.claims) {
-    redirect('/auth/login')
-  }
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/auth/login')
+      } else {
+        setUser(user)
+      }
+    }
+    checkUser()
+  }, [router])
+
+  if (!user) return <p>Chargement...</p>
 
   return (
     <div className="flex h-svh w-full items-center justify-center gap-2">
-      <p>
-        Hello <span>{data.claims.email}</span>
-      </p>
+      <p>Hello <span>{user.email}</span></p>
       <LogoutButton />
     </div>
   )
