@@ -1,6 +1,6 @@
 'use client';
 
-import { Mail, Car } from 'lucide-react';
+import { Mail, Car, Star } from 'lucide-react';
 
 // Nouvelle structure : Un véhicule a une plaque et potentiellement une place
 export interface VehicleInfo {
@@ -13,6 +13,7 @@ export interface Employee {
   name: string;
   email: string;
   vehicles: VehicleInfo[]; // Tableau de véhicules
+  isBoss: boolean;
 }
 
 interface EmployeesTabProps {
@@ -40,9 +41,21 @@ export function EmployeesTab({ employees }: EmployeesTabProps) {
           </thead>
           <tbody className="divide-y divide-gray-100 text-sm">
             {employees.map((emp) => (
-              <tr key={emp.id} className="hover:bg-gray-50 transition align-top">
-                {/* Nom et Email restent inchangés */}
-                <td className="px-6 py-4 font-medium text-gray-800">{emp.name}</td>
+              <tr 
+                key={emp.id} 
+                className={`transition align-top ${emp.isBoss ? 'bg-amber-50 hover:bg-amber-100/50' : 'hover:bg-gray-50'}`}
+              >
+                <td className="px-6 py-4 font-medium text-gray-800">
+                  <div className="flex items-center gap-2">
+                    {emp.name}
+                    {emp.isBoss && (
+                      <span className="flex items-center gap-1 bg-amber-200 text-amber-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                        <Star size={10} className="fill-amber-800" />
+                        Manager
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-gray-500">{emp.email}</td>
                 
                 {/* Colonne Véhicules : On boucle sur la liste */}

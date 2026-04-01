@@ -90,18 +90,22 @@ const DATA = {
 
 // Interface
 
+export interface VehicleInfo {
+  plate: string;
+  spot: string | null;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  vehicles: VehicleInfo[];
+  isBoss: boolean;
+}
+
 interface Entreprise {
   idEntreprise: number;
   nomEntreprise: string;
-}
-
-interface User {
-  idUser: number;
-  name: string;
-  surname: string;
-  mail: string;
-  status: boolean;
-  entreprise?: Entreprise;
 }
 
 interface Parking {
@@ -112,13 +116,6 @@ interface Parking {
   entreprise?: Entreprise;
 }
 
-interface DemandePlacePermanante {
-  idDemandePlacePermanante: number;
-  etat: number; // 0: Refusé, 1: en Attente, 2: Accepté
-  user: User;
-  entreprise: Entreprise;
-  place: any;
-}
 
 interface FormattedRequest {
   id: number;
@@ -134,7 +131,7 @@ export default function Dashboard() {
 
   // États pour les données API
   const [parkings, setParkings] = useState<Parking[]>([]);
-  const [employees, setEmployees] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [requests, setRequests] = useState<FormattedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("Admin");
@@ -161,6 +158,22 @@ export default function Dashboard() {
         ]);
 
         if (parkingsRes.ok) setParkings(await parkingsRes.json());
+        if (employeesRes.ok) {
+          const rawEmployees = await employeesRes.json();
+          
+          // On formate les données de l'API pour coller à l'interface Employee attendue par l'onglet
+          const formattedEmployees: Employee[] = rawEmployees.map((user: any) => ({
+            id: user.idUser,
+            name: `${user.name} ${user.surname}`,
+            email: user.mail,
+            vehicles: [] ,
+            isBoss: user.status === true || user.status === 1 || user.role === 1
+          }));
+
+          formattedEmployees.sort((a, b) => (a.isBoss === b.isBoss ? 0 : a.isBoss ? -1 : 1));
+
+          setEmployees(formattedEmployees);
+        }
         if (entrepriseRes.ok) {
           const entrepriseData = await entrepriseRes.json();
           if (entrepriseData.nom) setCompanyName(entrepriseData.nom);
@@ -194,7 +207,7 @@ export default function Dashboard() {
   const dynamicStats = {
     totalParkings: parkings.length,
     totalSpots: "--",
-    activeEmployees: employees.length,
+    activeEmployees: employees.length-1,
     pendingRequests: requests.filter((r) => r.status === "PENDING").length,
   };
 
@@ -202,14 +215,22 @@ export default function Dashboard() {
   const handleRequestAction = async (id: number, action: string) => {
     try {
       // On vérifie que l'action est correcte avant l'appel
-      if (action !== "accepter" && action !== "refuser") return;
-      const response = await fetchWithAuth(`/api/demandePermanante/${id}/${action}`, {
+      let apiAction = "";
+      if (action === "accept" || action === "accepter") {
+        apiAction = "accepter";
+      } else if (action === "reject" || action === "refuser") {
+        apiAction = "refuser";
+      } else {
+        console.error("Action inconnue :", action);
+        return;
+      }
+      const response = await fetchWithAuth(`/api/demandePermanante/${id}/${apiAction}`, {
         method: 'PATCH'
       });
 
       if (response.ok) {
         setRequests(prev => prev.map(req => 
-          req.idDemandePlacePermanante === id ? { ...req, status: action === "accepter" ? "APPROVED" : "REJECTED" } : req
+          req.id === id ? { ...req, status: action === "accepter" ? "APPROVED" : "REJECTED" } : req
         ));
         alert(`Demande ${action}ée avec succès.`);
       }
@@ -259,12 +280,12 @@ export default function Dashboard() {
               />
             )}
 
-            {/* Onglet Parkings avec les vrais parkings de l'API */}
+            {/* Onglet Parkings */}
             {activeTab === "parkings" && <ParkingsTab parkings={DATA.parkings} />}
 
-            {/* Onglet Salariés (encore sur DATA en attendant le prochain GET) */}
+            {/* Onglet Salariés */}
             {activeTab === "employees" && (
-              <EmployeesTab employees={DATA.employees} />
+              <EmployeesTab employees={employees} />
             )}
           </>
         )}
