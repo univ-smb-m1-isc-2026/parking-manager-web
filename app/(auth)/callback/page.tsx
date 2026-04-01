@@ -27,7 +27,7 @@ export default function AuthCallback() {
           const entrepriseId = sessionStorage.getItem('enterprise_id');
           //console.log("🏢 Enterprise ID:", entrepriseId);
 
-          const response = await fetch(`http://localhost:8080/api/auth/social-login`, {
+          const response = await fetch(`https://parking-manager-api.oups.net/api/auth/social-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
