@@ -10,7 +10,7 @@ export default function SignInSalarier() {
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: "http://localhost:3000/auth/callback",
+        redirectTo: "http://localhost:3000/callback",
       },
     });
   };
