@@ -3,10 +3,18 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 
 export default function SignInSalarier() {
+  const searchParams = useSearchParams();
+  const enterpriseId = searchParams.get('enterpriseId');
 
   const handleSocialLogin = async (provider: "google" | "github") => {
+    // Stocker l'enterpriseId dans sessionStorage pour l'utiliser au callback
+    if (enterpriseId) {
+      sessionStorage.setItem('enterprise_id', enterpriseId);
+    }
+
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
