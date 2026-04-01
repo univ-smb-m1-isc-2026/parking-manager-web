@@ -37,6 +37,9 @@ jobs:
       
       - name: build
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://cotckccxlskmgjxduxyf.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_xG1tk9RfLbOE74aclMxfbw_52XIv4J3
 
       - name: Extract metadata
         id: meta
