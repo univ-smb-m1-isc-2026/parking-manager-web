@@ -5,7 +5,6 @@ export function getEntrepriseIdFromToken(): number | null {
   if (!token) return null;
 
   try {
-    // Le payload est la 2ème partie du JWT (index 1)
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -17,7 +16,7 @@ export function getEntrepriseIdFromToken(): number | null {
 
     const payload = JSON.parse(jsonPayload);
     
-    return payload.idEntreprise || payload.id || null;
+    return payload.entrepriseId || payload.id || null;
   } catch (error) {
     console.error("Erreur lors du décodage du token:", error);
     return null;
@@ -30,7 +29,7 @@ export function getUserNameFromToken(): string {
 
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.name || "Admin";
+    return payload.nom || "Admin";
   } catch {
     return "Admin";
   }

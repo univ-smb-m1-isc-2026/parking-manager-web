@@ -88,13 +88,57 @@ const DATA = {
   ],
 };
 
+// Interface
+
+interface Entreprise {
+  idEntreprise: number;
+  nomEntreprise: string;
+}
+
+interface User {
+  idUser: number;
+  name: string;
+  surname: string;
+  mail: string;
+  status: boolean;
+  entreprise?: Entreprise;
+}
+
+interface Parking {
+  idParking: number;
+  name: string;
+  description: string;
+  linkMaps: string;
+  entreprise?: Entreprise;
+}
+
+interface DemandePlacePermanante {
+  idDemandePlacePermanante: number;
+  etat: number; // 0: Refusé, 1: en Attente, 2: Accepté
+  user: User;
+  entreprise: Entreprise;
+  place: any;
+}
+
+interface FormattedRequest {
+  id: number;
+  employee: string;
+  status: string;
+  type: string;
+  date: string;
+  parking: string;
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [userName, setUserName] = useState("Admin");
-  const [requests, setRequests] = useState(DATA.requests);
 
-  const [parkings, setParkings] = useState([]);
+  // États pour les données API
+  const [parkings, setParkings] = useState<Parking[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
+  const [requests, setRequests] = useState<FormattedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState("Admin");
+  const [companyName, setCompanyName] = useState("Chargement...");
 
   useEffect(() => {
     const idEntreprise = getEntrepriseIdFromToken();
@@ -106,41 +150,72 @@ export default function Dashboard() {
       setIsLoading(false);
       return;
     }
-    async function loadParkings() {
+    async function loadAllData() {
       try {
-        const response = await fetchWithAuth(
-          `/api/parking/getParkingByEntreprise/${idEntreprise}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setParkings(data);
+        // On lance les 4 requêtes principales en parallèle
+        const [parkingsRes, employeesRes, requestsRes, entrepriseRes] = await Promise.all([
+          fetchWithAuth(`/api/parking/getParkingByEntreprise/${idEntreprise}`),
+          fetchWithAuth(`/api/users/entreprise/${idEntreprise}`),
+          fetchWithAuth(`/api/demandePermanante/entreprise/${idEntreprise}`),
+          fetchWithAuth(`/api/entreprise/getEntrepriseById/${idEntreprise}`)
+        ]);
+
+        if (parkingsRes.ok) setParkings(await parkingsRes.json());
+        if (entrepriseRes.ok) {
+          const entrepriseData = await entrepriseRes.json();
+          if (entrepriseData.nom) setCompanyName(entrepriseData.nom);
         }
+        if (requestsRes.ok) {
+          const data = await requestsRes.json();
+          
+          const formattedRequests = data.map((req: any) => ({
+            id: req.idDemandePlacePermanante,
+            employee: `${req.user.name} ${req.user.surname}`,
+            status: req.etat === 1 ? "PENDING" : (req.etat === 2 ? "APPROVED" : "REJECTED"),
+            type: "PERMANENT",
+            date: "Aujourd'hui",
+            parking: req.place?.parking?.name || "Parking non spécifié",
+          }));
+
+          setRequests(formattedRequests);
+        }
+
       } catch (error) {
-        console.error("Erreur chargement parkings:", error);
+        console.error("Erreur lors du chargement des données:", error);
       } finally {
         setIsLoading(false);
       }
     }
-    loadParkings();
+
+    loadAllData();
   }, []);
 
   // On recalcule les stats avec la longueur réelle de la liste
   const dynamicStats = {
-    ...DATA.stats,
     totalParkings: parkings.length,
+    totalSpots: "--",
+    activeEmployees: employees.length,
+    pendingRequests: requests.filter((r) => r.status === "PENDING").length,
   };
 
-  const handleRequestAction = (id: number, action: string) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === id
-          ? { ...req, status: action === "accept" ? "APPROVED" : "REJECTED" }
-          : req,
-      ),
-    );
-    alert(
-      `Demande ${action === "accept" ? "acceptée" : "refusée"} avec succès.`,
-    );
+  // Gestion des actions sur les demandes (PATCH)
+  const handleRequestAction = async (id: number, action: string) => {
+    try {
+      // On vérifie que l'action est correcte avant l'appel
+      if (action !== "accepter" && action !== "refuser") return;
+      const response = await fetchWithAuth(`/api/demandePermanante/${id}/${action}`, {
+        method: 'PATCH'
+      });
+
+      if (response.ok) {
+        setRequests(prev => prev.map(req => 
+          req.idDemandePlacePermanante === id ? { ...req, status: action === "accepter" ? "APPROVED" : "REJECTED" } : req
+        ));
+        alert(`Demande ${action}ée avec succès.`);
+      }
+    } catch (error) {
+      alert("Erreur lors de l'action sur la demande.");
+    }
   };
 
   return (
@@ -149,10 +224,10 @@ export default function Dashboard() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        companyName={DATA.companyName}
+        companyName={companyName}
       />
 
-      <main className="ml-64 p-8">
+      <main className="ml-64 p-8">  
         {/* 2. Header  */}
         <header className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-slate-800">
@@ -185,7 +260,7 @@ export default function Dashboard() {
             )}
 
             {/* Onglet Parkings avec les vrais parkings de l'API */}
-            {activeTab === "parkings" && <ParkingsTab parkings={parkings} />}
+            {activeTab === "parkings" && <ParkingsTab parkings={DATA.parkings} />}
 
             {/* Onglet Salariés (encore sur DATA en attendant le prochain GET) */}
             {activeTab === "employees" && (
