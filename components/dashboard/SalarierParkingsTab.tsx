@@ -76,6 +76,11 @@ export function SalarierParkingsTab({ parkings, onRequestPlace, userVehicles }: 
                   </div>
                   <p className="text-gray-500 text-sm mb-4">{parking.description}</p>
                 </div>
+                
+                <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium">Occupation :</div>
+                    <div className="text-sm text-gray-600">{parking.occupied || "0"} / {parking.totalSpots || "--"} places</div>
+                </div>
 
                 {/* Bouton et formulaire */}
                 <div className="border-t border-gray-100 pt-4">
