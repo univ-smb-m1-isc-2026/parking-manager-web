@@ -10,10 +10,6 @@ export interface Parking {
   linkMaps: string;
   totalSpots: number;
   occupied: number;
-  pricing: {
-    annual: number;
-    daily: number;
-  };
 }
 
 interface SalarierParkingsTabProps {
@@ -60,12 +56,12 @@ export function SalarierParkingsTab({ parkings, onRequestPlace, userVehicles }: 
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {parkings.map((parking) => {
+          {parkings.map((parking,index) => {
             const availableSpots = getAvailableSpots(parking);
             const occupancyPercentage = (parking.occupied / parking.totalSpots) * 100;
 
             return (
-              <div key={parking.idParking} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between">
+              <div key={parking.idParking || `parking-${index}`} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-xl font-bold text-gray-800">{parking.name}</h3>
@@ -79,35 +75,6 @@ export function SalarierParkingsTab({ parkings, onRequestPlace, userVehicles }: 
                     </a>
                   </div>
                   <p className="text-gray-500 text-sm mb-4">{parking.description}</p>
-
-                  {/* Tarifs */}
-                  <div className="bg-gray-50 p-3 rounded-lg mb-4 grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-xs text-gray-400 uppercase font-semibold">Place Permanente</span>
-                      <p className="font-bold text-gray-800">{parking.pricing.annual} €/an</p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-gray-400 uppercase font-semibold">Place Temporaire</span>
-                      <p className="font-bold text-gray-800">{parking.pricing.daily} €/jour</p>
-                    </div>
-                  </div>
-
-                  {/* Barre d'occupation */}
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">Occupation</span>
-                      <span className="text-sm text-gray-600">{parking.occupied}/{parking.totalSpots} places</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${occupancyPercentage}%` }}
-                      ></div>
-                    </div>
-                    <p className={`text-xs mt-1 ${availableSpots > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {availableSpots > 0 ? `${availableSpots} place${availableSpots > 1 ? 's' : ''} disponible${availableSpots > 1 ? 's' : ''}` : 'Complet'}
-                    </p>
-                  </div>
                 </div>
 
                 {/* Bouton et formulaire */}

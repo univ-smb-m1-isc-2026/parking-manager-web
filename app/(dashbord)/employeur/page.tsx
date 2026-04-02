@@ -25,7 +25,6 @@ const DATA = {
       mapsLink: "#",
       totalSpots: 50,
       occupied: 45,
-      pricing: { annual: 1200, daily: 5 },
     },
     {
       id: 2,
@@ -34,7 +33,6 @@ const DATA = {
       mapsLink: "#",
       totalSpots: 100,
       occupied: 20,
-      pricing: { annual: 800, daily: 2 },
     },
   ],
   requests: [

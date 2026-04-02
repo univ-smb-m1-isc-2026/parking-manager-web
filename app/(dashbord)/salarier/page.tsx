@@ -58,7 +58,7 @@ export default function SalarierDashboard() {
             fetch(`http://localhost:8080/api/vehicule/getVehiculeByUserId/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
-            fetch(`http://localhost:8080/api/getAllParking/`, { headers })
+            fetch(`http://localhost:8080/api/parking/getParkingByEntreprise/${userData.entrepriseId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
           ]);

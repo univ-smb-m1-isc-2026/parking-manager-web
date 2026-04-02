@@ -23,11 +23,9 @@ export function ParkingsTab({ parkings }: { parkings: any[] }) {
                 <div className="bg-gray-50 p-3 rounded-lg mb-4 grid grid-cols-2 gap-4">
                     <div>
                         <span className="text-xs text-gray-400 uppercase font-semibold">Place Permanente</span>
-                        <p className="font-bold text-gray-800">{parking.pricing.annual} € / an</p>
                     </div>
                     <div>
                         <span className="text-xs text-gray-400 uppercase font-semibold">Place Temporaire</span>
-                        <p className="font-bold text-gray-800">{parking.pricing.daily} € / jour</p>
                     </div>
                 </div>
             </div>

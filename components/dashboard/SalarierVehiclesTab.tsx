@@ -122,7 +122,6 @@ export function SalarierVehiclesTab({ vehicles, onDeleteVehicle, onAddVehicle }:
                     <Car size={20} className="text-gray-600" />
                     <div>
                       <p className="font-mono font-bold text-gray-800">{vehicle.immatriculation}</p>
-                      <p className="text-xs text-gray-500">Plaque d'immatriculation</p>
                     </div>
                   </div>
                   <button
