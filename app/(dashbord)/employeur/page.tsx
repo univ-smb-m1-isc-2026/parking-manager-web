@@ -109,12 +109,19 @@ interface Entreprise {
   nomEntreprise: string;
 }
 
-interface Parking {
-  idParking: number;
+export interface Parking {
+  id: number;
   name: string;
   description: string;
   linkMaps: string;
-  entreprise?: Entreprise;
+  entrepriseId?: number;
+  entrepriseNom?: string;
+  totalSpots?: number;
+  occupied?: number;
+  pricing?: {
+    annual: number | string;
+    daily: number | string;
+  };
 }
 
 
@@ -162,7 +169,48 @@ export default function Dashboard() {
         let rawEmployees: any[] = [];
         let rawRequests: any[] = [];
 
-        if (parkingsRes.ok) setParkings(await parkingsRes.json());
+        if (parkingsRes.ok) {
+          const rawParkings = await parkingsRes.json();
+          
+          // 1. On crée les requêtes pour récupérer les places de chaque parking
+          // Note: On vérifie p.idParking ou p.id au cas où Spring le nomme différemment
+          const placesPromises = rawParkings.map((p: any) => 
+            fetchWithAuth(`/api/place/getPlaceByParkingId/${p.idParking || p.id}`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
+
+          // 2. On attend que toutes les places soient récupérées
+          const allPlacesArrays = await Promise.all(placesPromises);
+
+          // 3. On formate les parkings en ajoutant les stats des places
+          const formattedParkings: Parking[] = rawParkings.map((parking: any, index: number) => {
+            const places = allPlacesArrays[index] || [];
+            
+            // Calcul des statistiques
+            const totalSpots = places.length;
+            const occupied = places.filter((pl: any) => pl.etat === true || pl.user !== null).length;
+            
+            let annual = "--";
+            let daily = "--";
+            if (places.length > 0) {
+              annual = places[0].tarifAnnuel;
+              daily = places[0].tarifJournalier;
+            }
+
+            return {
+              id: parking.idParking || parking.id,
+              name: parking.name,
+              description: parking.description,
+              linkMaps: parking.linkMaps,
+              totalSpots,
+              occupied,
+              pricing: { annual, daily }
+            };
+          });
+
+          setParkings(formattedParkings);
+        }
         
         if (entrepriseRes.ok) {
           const entrepriseData = await entrepriseRes.json();
@@ -253,8 +301,8 @@ export default function Dashboard() {
   // On recalcule les stats avec la longueur réelle de la liste
   const dynamicStats = {
     totalParkings: parkings.length,
-    totalSpots: "--",
-    activeEmployees: employees.length-1,
+    totalSpots: parkings.reduce((acc, parking) => acc + (parking.totalSpots || 0), 0), 
+    activeEmployees: employees.length > 0 ? employees.length - 1 : 0,
     pendingRequests: requests.filter((r) => r.status === "PENDING").length,
   };
 
@@ -328,7 +376,7 @@ export default function Dashboard() {
             )}
 
             {/* Onglet Parkings */}
-            {activeTab === "parkings" && <ParkingsTab parkings={DATA.parkings} />}
+            {activeTab === "parkings" && <ParkingsTab parkings={parkings} />}
 
             {/* Onglet Salariés */}
             {activeTab === "employees" && (
