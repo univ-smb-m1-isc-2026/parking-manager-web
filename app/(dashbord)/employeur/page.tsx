@@ -337,7 +337,6 @@ export default function Dashboard() {
     const idEntreprise = getEntrepriseIdFromToken();
     if (!idEntreprise) return;
 
-    // Le JSON attendu par ton API
     const payload = {
       ...newData,
       entrepriseId: idEntreprise
@@ -350,27 +349,7 @@ export default function Dashboard() {
       });
 
       if (response.ok) {
-        let newId = Date.now(); // ID temporaire
-        try {
-          const createdParking = await response.json();
-          if (createdParking.idParking || createdParking.id) {
-             newId = createdParking.idParking || createdParking.id;
-          }
-        } catch (e) {
-        }
-
-        const parkingCard: Parking = {
-          id: newId,
-          name: payload.name,
-          description: payload.description,
-          linkMaps: payload.linkMaps,
-          entrepriseId: payload.entrepriseId,
-          totalSpots: 0, // Un nouveau parking a 0 place
-          occupied: 0,
-          pricing: { annual: "--", daily: "--" }
-        };
-
-        setParkings(prev => [...prev, parkingCard]);
+        window.location.reload(); 
       } else {
         alert("Erreur lors de la création du parking.");
       }
