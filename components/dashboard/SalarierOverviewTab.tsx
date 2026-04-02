@@ -68,9 +68,7 @@ export function SalarierOverviewTab({ places, demandes }: SalarierOverviewTabPro
             <thead className="bg-gray-50 text-gray-500 uppercase">
               <tr>
                 <th className="px-4 py-3">Parking</th>
-                <th className="px-4 py-3">Place</th>
-                <th className="px-4 py-3">Véhicule</th>
-                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">N° de place</th>
                 <th className="px-4 py-3">Statut</th>
               </tr>
             </thead>
@@ -83,15 +81,7 @@ export function SalarierOverviewTab({ places, demandes }: SalarierOverviewTabPro
                       {place.spot}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs bg-gray-100 px-2 py-1 rounded border border-gray-200 w-fit">
-                    {place.vehiclePlate}
-                  </td>
                   <td className="px-4 py-3 text-gray-600">{place.type}</td>
-                  <td className="px-4 py-3">
-                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200">
-                      ACTIVE
-                    </span>
-                  </td>
                 </tr>
               ))}
               {activePlaces.length === 0 && (

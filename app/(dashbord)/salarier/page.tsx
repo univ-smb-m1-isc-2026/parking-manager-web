@@ -56,7 +56,7 @@ export default function SalarierDashboard() {
           setUserEmail(userData.mail || user.email);
 
           // 2. Charger les données en utilisant currentUserId
-          const [vehiclesRes, parkingsRes, demandesRes] = await Promise.all([
+          const [vehiclesRes, parkingsRes, demandesRes, placesRes] = await Promise.all([
             fetch(`http://localhost:8080/api/vehicule/getVehiculeByUserId/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
@@ -66,10 +66,24 @@ export default function SalarierDashboard() {
             fetch(`http://localhost:8080/api/demandePermanante/user/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
+            fetch(`http://localhost:8080/api/place/getPlaceByUserId/${currentUserId}`, { headers })
+              .then(r => r.ok ? r.json() : [])
+              .catch(() => []),
           ]);
 
           setVehicles(Array.isArray(vehiclesRes) ? vehiclesRes : []);
           setParkings(Array.isArray(parkingsRes) ? parkingsRes : []);
+          
+          // Mapper les places pour correspondre à l'interface PlaceAssignee
+          const placesMapped = Array.isArray(placesRes) ? placesRes.map((p: any) => ({
+            id: p.idPlace,
+            parkingName: p.parking?.name || 'Parking',
+            spot: p.numero || `Place n°${p.idPlace}`,
+            type: p.type || 'PERMANENT',
+            vehiclePlate: p.user?.immatriculation || '--',
+            status: p.etat === true ? 'ACTIVE' : 'EXPIRED'
+          })) : [];
+          setPlaces(placesMapped);
           
           // Mapper les demandes pour correspondre à l'interface Demande
           const demandesMapped = Array.isArray(demandesRes) ? demandesRes.map((d: any) => ({
