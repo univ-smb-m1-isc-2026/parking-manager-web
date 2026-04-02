@@ -55,24 +55,6 @@ export function SalarierOverviewTab({ places, demandes }: SalarierOverviewTabPro
 
   return (
     <div className="space-y-8">
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard 
-          title="Places Actives" 
-          value={stats.activePlaces} 
-          icon={<CheckCircle size={24} className="text-green-500"/>} 
-        />
-        <StatCard 
-          title="Places Totales" 
-          value={stats.totalSpots} 
-          icon={<MapPin size={24} className="text-blue-500"/>} 
-        />
-        <StatCard 
-          title="Demandes en attente" 
-          value={stats.pendingRequests} 
-          icon={<Clock size={24} className="text-orange-500"/>} 
-        />
-      </div>
 
       {/* MES PLACES */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -138,8 +120,8 @@ export function SalarierOverviewTab({ places, demandes }: SalarierOverviewTabPro
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {demandes.map((demande) => (
-                <tr key={demande.id} className="hover:bg-gray-50">
+              {demandes.map((demande, index) => (
+                <tr key={demande.id ?? `demande-${index}`} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{demande.parkingName}</td>
                   <td className="px-4 py-3 text-gray-600">{demande.type}</td>
                   <td className="px-4 py-3 text-gray-500">{demande.date}</td>

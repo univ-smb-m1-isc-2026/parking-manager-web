@@ -56,17 +56,30 @@ export default function SalarierDashboard() {
           setUserEmail(userData.mail || user.email);
 
           // 2. Charger les données en utilisant currentUserId
-          const [vehiclesRes, parkingsRes] = await Promise.all([
+          const [vehiclesRes, parkingsRes, demandesRes] = await Promise.all([
             fetch(`http://localhost:8080/api/vehicule/getVehiculeByUserId/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
             fetch(`http://localhost:8080/api/parking/getParkingByEntreprise/${userData.entrepriseId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
+            fetch(`http://localhost:8080/api/demandePermanante/user/${currentUserId}`, { headers })
+              .then(r => r.ok ? r.json() : [])
+              .catch(() => []),
           ]);
 
           setVehicles(Array.isArray(vehiclesRes) ? vehiclesRes : []);
           setParkings(Array.isArray(parkingsRes) ? parkingsRes : []);
+          
+          // Mapper les demandes pour correspondre à l'interface Demande
+          const demandesMapped = Array.isArray(demandesRes) ? demandesRes.map((d: any) => ({
+            id: d.idDemandePlacePermanante,
+            parkingName: d.place?.parking?.name || 'Parking',
+            type: d.type || 'PERMANENT',
+            date: d.dateCreation || new Date().toISOString().split('T')[0],
+            status: d.etat === 1 ? 'PENDING' : (d.etat === 2 ? 'APPROVED' : 'REJECTED')
+          })) : [];
+          setDemandes(demandesMapped);
         } else {
           console.error("Impossible de récupérer les infos utilisateur Java");
         }
