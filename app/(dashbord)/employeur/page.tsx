@@ -7,86 +7,6 @@ import { ParkingsTab } from "@/components/dashboard/ParkingsTab";
 import { EmployeesTab } from "@/components/dashboard/EmployeesTab";
 import { fetchWithAuth } from "@/lib/api";
 import { getEntrepriseIdFromToken, getUserNameFromToken } from "@/lib/auth";
-// --- DONNÉES DE DÉMO ---
-// Tu peux même déplacer ça dans un fichier lib/data.ts plus tard
-const DATA = {
-  companyName: "TechCorp Solutions",
-  stats: {
-    totalParkings: 3,
-    totalSpots: 180,
-    activeEmployees: 42,
-    pendingRequests: 2,
-  },
-  parkings: [
-    {
-      id: 1,
-      name: "Siege Social - Sous-sol",
-      desc: "Accès via badge",
-      mapsLink: "#",
-      totalSpots: 50,
-      occupied: 45,
-      pricing: { annual: 1200, daily: 5 },
-    },
-    {
-      id: 2,
-      name: "Parking Extérieur Nord",
-      desc: "Zone grillagée",
-      mapsLink: "#",
-      totalSpots: 100,
-      occupied: 20,
-      pricing: { annual: 800, daily: 2 },
-    },
-  ],
-  requests: [
-    {
-      id: 101,
-      employee: "Jean Dupont",
-      type: "PERMANENT",
-      parking: "Siege Social - Sous-sol",
-      date: "10/02/2026",
-      status: "PENDING",
-    },
-    {
-      id: 102,
-      employee: "Elliott Moiroud",
-      type: "PERMANENT",
-      parking: "Siege Social - Sous-sol",
-      date: "10/02/2026",
-      status: "PENDING",
-    },
-    {
-      id: 103,
-      employee: "Sophie Martin",
-      type: "TEMPORAIRE",
-      parking: "Parking Extérieur Nord",
-      date: "10/02/2026",
-      status: "AUTO-CONFIRMED",
-    },
-  ],
-  employees: [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      email: "jean@techcorp.com",
-      vehicles: [
-        { plate: "AB-123-CD", spot: "P1-12" },
-        { plate: "XY-999-ZZ", spot: null },
-      ],
-    },
-    {
-      id: 2,
-      name: "Elliott Moiroud",
-      email: "elliott@techcorp.com",
-      vehicles: [{ plate: "CD-456-EF", spot: "P2-04" }],
-    },
-    {
-      id: 3,
-      name: "Alice Martin",
-      email: "alice@techcorp.com",
-      vehicles: [],
-    },
-  ],
-};
 
 // Interface
 
@@ -327,10 +247,136 @@ export default function Dashboard() {
         setRequests(prev => prev.map(req => 
           req.id === id ? { ...req, status: action === "accepter" ? "APPROVED" : "REJECTED" } : req
         ));
-        alert(`Demande ${action}ée avec succès.`);
       }
     } catch (error) {
       alert("Erreur lors de l'action sur la demande.");
+    }
+  };
+
+  // GESTION DES PARKINGS
+  const handleDeleteParking = async (id: number) => {
+    try {
+      const response = await fetchWithAuth(`/api/parking/deleteParking/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setParkings(prev => prev.filter(p => p.id !== id));
+      } else {
+        alert("Erreur lors de la suppression du parking.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur réseau lors de la suppression.");
+    }
+  };
+
+  const handleGenerateSpots = async (parkingId: number, data: {quantite: number, tarifJournalier: number, tarifAnnuel: number}) => {
+    try {
+      const response = await fetchWithAuth('/api/place/generer', {
+        method: 'POST',
+        body: JSON.stringify({
+          parkingId: parkingId,
+          quantite: data.quantite,
+          tarifJournalier: data.tarifJournalier,
+          tarifAnnuel: data.tarifAnnuel
+        })
+      });
+
+      if (response.ok) {
+        setParkings(prev => prev.map(p => {
+          if (p.id === parkingId) {
+            return {
+              ...p,
+              totalSpots: (p.totalSpots || 0) + data.quantite,
+              pricing: {
+                annual: data.tarifAnnuel,
+                daily: data.tarifJournalier
+              }
+            };
+          }
+          return p;
+        }));
+      } else {
+        alert("Erreur lors de la génération des places.");
+      }
+    } catch (error) {
+      console.error("Erreur génération places:", error);
+      alert("Erreur réseau lors de la génération.");
+    }
+  };
+
+  const handleEditParking = async (id: number, updatedData: any) => {
+    // On assemble les données du formulaire avec l'ID de l'entreprise
+    const finalData = {
+      ...updatedData,
+      entrepriseId: getEntrepriseIdFromToken() || 1 // Remplace par l'id par défaut si besoin
+    };
+
+    try {
+      const response = await fetchWithAuth(`/api/parking/editParking/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(finalData)
+      });
+
+      if (response.ok) {
+        // On met à jour l'interface React instantanément
+        setParkings(prev => prev.map(p => 
+          p.id === id ? { ...p, ...finalData } : p
+        ));
+      } else {
+        alert("Erreur lors de la modification du parking.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur réseau lors de la modification.");
+    }
+  };
+
+  const handleAddParking = async (newData: any) => {
+    const idEntreprise = getEntrepriseIdFromToken();
+    if (!idEntreprise) return;
+
+    // Le JSON attendu par ton API
+    const payload = {
+      ...newData,
+      entrepriseId: idEntreprise
+    };
+
+    try {
+      const response = await fetchWithAuth('/api/parking/addParking', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        let newId = Date.now(); // ID temporaire
+        try {
+          const createdParking = await response.json();
+          if (createdParking.idParking || createdParking.id) {
+             newId = createdParking.idParking || createdParking.id;
+          }
+        } catch (e) {
+        }
+
+        const parkingCard: Parking = {
+          id: newId,
+          name: payload.name,
+          description: payload.description,
+          linkMaps: payload.linkMaps,
+          entrepriseId: payload.entrepriseId,
+          totalSpots: 0, // Un nouveau parking a 0 place
+          occupied: 0,
+          pricing: { annual: "--", daily: "--" }
+        };
+
+        setParkings(prev => [...prev, parkingCard]);
+      } else {
+        alert("Erreur lors de la création du parking.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur réseau lors de la création.");
     }
   };
 
@@ -376,7 +422,15 @@ export default function Dashboard() {
             )}
 
             {/* Onglet Parkings */}
-            {activeTab === "parkings" && <ParkingsTab parkings={parkings} />}
+            {activeTab === "parkings" && (
+              <ParkingsTab 
+                parkings={parkings} 
+                onDelete={handleDeleteParking} 
+                onEditSubmit={handleEditParking}
+                onAddSubmit={handleAddParking}
+                onGenerateSubmit={handleGenerateSpots}
+              />
+            )}
 
             {/* Onglet Salariés */}
             {activeTab === "employees" && (
