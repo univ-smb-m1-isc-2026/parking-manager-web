@@ -101,6 +101,7 @@ export interface Employee {
   email: string;
   vehicles: VehicleInfo[];
   isBoss: boolean;
+  spot: string | null;
 }
 
 interface Entreprise {
@@ -157,31 +158,20 @@ export default function Dashboard() {
           fetchWithAuth(`/api/entreprise/getEntrepriseById/${idEntreprise}`)
         ]);
 
+        // On stocke les résultats bruts
+        let rawEmployees: any[] = [];
+        let rawRequests: any[] = [];
+
         if (parkingsRes.ok) setParkings(await parkingsRes.json());
-        if (employeesRes.ok) {
-          const rawEmployees = await employeesRes.json();
-          
-          // On formate les données de l'API pour coller à l'interface Employee attendue par l'onglet
-          const formattedEmployees: Employee[] = rawEmployees.map((user: any) => ({
-            id: user.idUser,
-            name: `${user.name} ${user.surname}`,
-            email: user.mail,
-            vehicles: [] ,
-            isBoss: user.status === true || user.status === 1 || user.role === 1
-          }));
-
-          formattedEmployees.sort((a, b) => (a.isBoss === b.isBoss ? 0 : a.isBoss ? -1 : 1));
-
-          setEmployees(formattedEmployees);
-        }
+        
         if (entrepriseRes.ok) {
           const entrepriseData = await entrepriseRes.json();
           if (entrepriseData.nom) setCompanyName(entrepriseData.nom);
         }
         if (requestsRes.ok) {
-          const data = await requestsRes.json();
+          rawRequests = await requestsRes.json();
           
-          const formattedRequests = data.map((req: any) => ({
+          const formattedRequests = rawRequests.map((req: any) => ({
             id: req.idDemandePlacePermanante,
             employee: `${req.user.name} ${req.user.surname}`,
             status: req.etat === 1 ? "PENDING" : (req.etat === 2 ? "APPROVED" : "REJECTED"),
@@ -191,6 +181,63 @@ export default function Dashboard() {
           }));
 
           setRequests(formattedRequests);
+        }
+
+        if (employeesRes.ok) {
+          rawEmployees = await employeesRes.json();
+          
+          // On crée un tableau de promesses pour aller chercher les véhicules de CHAQUE employé en parallèle
+          const vehiclesPromises = rawEmployees.map(user => 
+            fetchWithAuth(`/api/vehicule/getVehiculeByUserId/${user.idUser}`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => []) // Sécurité en cas d'erreur
+          );
+
+          // On attend que toutes les requêtes de véhicules soient terminées !
+          const allVehiclesArrays = await Promise.all(vehiclesPromises);
+
+          // On formate enfin nos employés avec leurs véhicules et leurs places
+          const formattedEmployees: Employee[] = rawEmployees.map((user: any, index: number) => {
+            
+            // a. On cherche la demande approuvée
+            const approvedRequest = rawRequests.find((req: any) => 
+              req.user?.idUser === user.idUser && req.etat == 2
+            );
+
+            //DEBUG
+            if (approvedRequest) {
+               console.log(`Demande approuvée trouvée pour ${user.name}:`, approvedRequest);
+            }
+            
+            // b. On récupère le nom de la place
+            let spotName = null;
+            if (approvedRequest && approvedRequest.place) {
+              // On teste "idPlace", "id", ou si l'API a juste renvoyé le chiffre direct
+              const placeId = approvedRequest.place.idPlace || approvedRequest.place.id || approvedRequest.place;
+              spotName = `Place n°${placeId}`;
+            }
+
+            // c. On formate ses véhicules (sans s'occuper de la place ici !)
+            const rawUserVehicles = allVehiclesArrays[index] || [];
+            const formattedVehicles = rawUserVehicles.map((veh: any) => ({
+              plate: veh.immatriculation || veh.plaque || veh.marque || "Inconnu",
+              spot: null 
+            }));
+
+            // d. On retourne l'objet
+            return {
+              id: user.idUser,
+              name: `${user.name} ${user.surname}`,
+              email: user.mail,
+              isBoss: user.status === true || user.status === 1 || user.role === 1,
+              vehicles: formattedVehicles,
+              spot: spotName
+            };
+          });
+
+          formattedEmployees.sort((a, b) => (a.isBoss === b.isBoss ? 0 : a.isBoss ? -1 : 1));
+
+          setEmployees(formattedEmployees);
         }
 
       } catch (error) {

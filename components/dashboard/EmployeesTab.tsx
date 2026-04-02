@@ -5,7 +5,6 @@ import { Mail, Car, Star, X, Send } from 'lucide-react';
 
 export interface VehicleInfo {
   plate: string;
-  spot: string | null; // null = pas de place attribuée pour ce véhicule
 }
 
 export interface Employee {
@@ -14,6 +13,7 @@ export interface Employee {
   email: string;
   vehicles: VehicleInfo[]; // Tableau de véhicules
   isBoss: boolean;
+  spot: string | null;
 }
 
 interface EmployeesTabProps {
@@ -113,23 +113,17 @@ ${inviteLink}
                   </div>
                 </td>
 
-                {/* Colonne Places : On boucle aussi pour aligner avec les véhicules */}
+                {/* Colonne Places : Indépendante des véhicules */}
                 <td className="px-6 py-4">
-                  <div className="flex flex-col gap-2">
-                    {emp.vehicles.length > 0 ? emp.vehicles.map((v, index) => (
-                      <div key={index} className="h-6 flex items-center">
-                        {v.spot ? (
-                          <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold border border-green-200">
-                            {v.spot}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 italic text-xs border border-transparent px-2">
-                            --
-                          </span>
-                        )}
-                      </div>
-                    )) : (
-                      <span className="text-gray-400 italic text-xs">--</span>
+                  <div className="h-6 flex items-center">
+                    {emp.spot ? (
+                      <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold border border-green-200">
+                        {emp.spot}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 italic text-xs px-2">
+                        --
+                      </span>
                     )}
                   </div>
                 </td>
