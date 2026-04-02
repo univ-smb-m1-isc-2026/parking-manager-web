@@ -13,6 +13,7 @@ export default function SalarierDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("Salarié");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [entrepriseId, setEntrepriseId] = useState<number | null>(null);
   
   // AJOUT : Stocker l'ID numérique de la BDD Java
   const [javaUserId, setJavaUserId] = useState<number | null>(null);
@@ -47,7 +48,8 @@ export default function SalarierDashboard() {
         if (userInfosRes.ok) {
           const userData = await userInfosRes.json();
           const currentUserId = userData.idUser; // On extrait l'ID ici
-          setJavaUserId(currentUserId); 
+          setJavaUserId(currentUserId);
+          setEntrepriseId(userData.entrepriseId);
           
           // Mettre à jour les infos profil
           setUserName(userData.name || user.user_metadata?.full_name || "Salarié");
@@ -99,25 +101,16 @@ export default function SalarierDashboard() {
     });
 
     if (response.ok) {
-      // 💡 CORRECTION ICI : On vérifie si le contenu est bien du JSON
       const contentType = response.headers.get("content-type");
       
       if (contentType && contentType.includes("application/json")) {
         const addedVehicle = await response.json();
         setVehicles([...vehicles, addedVehicle]);
       } else {
-        // Si c'est du texte ou vide, on ne parse pas, on rafraîchit juste la liste localement
-        // ou on ré-exécute le chargement des données
         console.log("Le serveur a répondu avec succès (mais pas de JSON)");
         
-        // Option simple : on ajoute l'objet envoyé manuellement à la liste pour l'UI
         setVehicles([...vehicles, { ...payload, idVehicule: Date.now() }]); 
-        
-        // Option propre : on recharge la liste depuis le serveur
-        // loadUserAndData(); 
       }
-      
-      //alert("✅ Véhicule ajouté avec succès");
     } else {
       const errorText = await response.text();
       alert(`❌ Erreur: ${errorText}`);
@@ -144,9 +137,45 @@ export default function SalarierDashboard() {
     }
   };
 
-  const handleRequestPlace = async (parkingId: number, type: string, vehicleId?: number) => {
-      alert("Fonctionnalité en cours de développement");
-  };
+  const handleRequestPlace = async (parkingId: number) => {
+        if (!parkingId) {
+            console.error("❌ parkingId undefined !");
+            return;
+        }
+        try {
+            const apiToken = Cookies.get("session_token")?.replace(/"/g, "");
+
+            if (!javaUserId || !entrepriseId || !apiToken) {
+                throw new Error("Utilisateur non connecté ou informations incomplètes");
+            }
+
+            const response = await fetch("http://localhost:8080/api/demandePermanante", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiToken}`,
+                },
+                body: JSON.stringify({
+                    userId: javaUserId,
+                    entrepriseId: entrepriseId,
+                    parkingId: parkingId,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const data = await response.json();
+
+            setDemandes((prev) => [...prev, data]);
+
+        } catch (error) {
+            console.error("Erreur demande:", error);
+            throw error; 
+        }
+    };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
@@ -183,7 +212,6 @@ export default function SalarierDashboard() {
               <SalarierParkingsTab 
                 parkings={parkings} 
                 onRequestPlace={handleRequestPlace} 
-                userVehicles={vehicles} 
               />
             )}
           </>
