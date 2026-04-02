@@ -34,3 +34,15 @@ export function getUserNameFromToken(): string {
     return "Admin";
   }
 }
+
+export function getUserEmailFromToken(): string | null {
+  const token = Cookies.get('session_token');
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || null; // Ton JSON montre que l'email est dans "sub"
+  } catch (error) {
+    return null;
+  }
+}
