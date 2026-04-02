@@ -70,7 +70,8 @@ export function getUserIdFromToken(): string | null {
     return userId;
   } catch (error) {
     console.error("❌ Erreur lors de l'extraction de l'userId du token:", error);
-}
+    return null;
+  }
 }
 export function getUserEmailFromToken(): string | null {
   const token = Cookies.get('session_token');
