@@ -43,7 +43,7 @@ export default function SalarierDashboard() {
         };
 
         // 1. Récupérer l'ID Java et attendre le résultat
-        const userInfosRes = await fetch(`http://localhost:8080/api/auth/me?mail=${user.email}`, { headers });
+        const userInfosRes = await fetch(`https://parking-manager-api.oups.net/api/auth/me?mail=${user.email}`, { headers });
         
         if (userInfosRes.ok) {
           const userData = await userInfosRes.json();
@@ -57,16 +57,16 @@ export default function SalarierDashboard() {
 
           // 2. Charger les données en utilisant currentUserId
           const [vehiclesRes, parkingsRes, demandesRes, placesRes] = await Promise.all([
-            fetch(`http://localhost:8080/api/vehicule/getVehiculeByUserId/${currentUserId}`, { headers })
+            fetch(`https://parking-manager-api.oups.net/api/vehicule/getVehiculeByUserId/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
-            fetch(`http://localhost:8080/api/parking/getParkingByEntreprise/${userData.entrepriseId}`, { headers })
+            fetch(`https://parking-manager-api.oups.net/api/parking/getParkingByEntreprise/${userData.entrepriseId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
-            fetch(`http://localhost:8080/api/demandePermanante/user/${currentUserId}`, { headers })
+            fetch(`https://parking-manager-api.oups.net/api/demandePermanante/user/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
-            fetch(`http://localhost:8080/api/place/getPlaceByUserId/${currentUserId}`, { headers })
+            fetch(`https://parking-manager-api.oups.net/api/place/getPlaceByUserId/${currentUserId}`, { headers })
               .then(r => r.ok ? r.json() : [])
               .catch(() => []),
           ]);
@@ -76,7 +76,7 @@ export default function SalarierDashboard() {
           // Charger les places pour chaque parking pour calculer l'occupation
           const rawParkings = Array.isArray(parkingsRes) ? parkingsRes : [];
           const placesPromises = rawParkings.map((p: any) => 
-            fetch(`http://localhost:8080/api/place/getPlaceByParkingId/${p.idParking || p.id}`, { headers })
+            fetch(`https://parking-manager-api.oups.net/api/place/getPlaceByParkingId/${p.idParking || p.id}`, { headers })
               .then(res => res.ok ? res.json() : [])
               .catch(() => [])
           );
@@ -136,7 +136,7 @@ export default function SalarierDashboard() {
       userId: javaUserId,
     };
 
-    const response = await fetch("http://localhost:8080/api/vehicule/addVehicule", {
+    const response = await fetch("https://parking-manager-api.oups.net/api/vehicule/addVehicule", {
       method: "POST",
       headers: { 
           "Content-Type": "application/json",
@@ -168,7 +168,7 @@ export default function SalarierDashboard() {
   const handleDeleteVehicle = async (vehicleId: number) => {
     try {
       const apiToken = Cookies.get("session_token");
-      const response = await fetch(`http://localhost:8080/api/vehicule/deleteVehicule/${vehicleId}`, {
+      const response = await fetch(`https://parking-manager-api.oups.net/api/vehicule/deleteVehicule/${vehicleId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${apiToken}` },
       });
@@ -194,7 +194,7 @@ export default function SalarierDashboard() {
                 throw new Error("Utilisateur non connecté ou informations incomplètes");
             }
 
-            const response = await fetch("http://localhost:8080/api/demandePermanante", {
+            const response = await fetch("https://parking-manager-api.oups.net/api/demandePermanante", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

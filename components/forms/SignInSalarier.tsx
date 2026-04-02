@@ -45,14 +45,6 @@ export default function SignInSalarier() {
             Continuer avec Google
           </Button>
 
-          <Button
-            onClick={() => handleSocialLogin("github")}
-            variant="outline"
-            className="w-full"
-          >
-            Continuer avec GitHub
-          </Button>
-
         </CardContent>
       </Card>
     </div>
