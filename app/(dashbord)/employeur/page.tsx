@@ -6,88 +6,10 @@ import { OverviewTab } from "@/components/dashboard/OverviewTab";
 import { ParkingsTab } from "@/components/dashboard/ParkingsTab";
 import { EmployeesTab } from "@/components/dashboard/EmployeesTab";
 import { fetchWithAuth } from "@/lib/api";
-import { getEntrepriseIdFromToken, getUserNameFromToken } from "@/lib/auth";
-// --- DONNÉES DE DÉMO ---
-// Tu peux même déplacer ça dans un fichier lib/data.ts plus tard
-const DATA = {
-  companyName: "TechCorp Solutions",
-  stats: {
-    totalParkings: 3,
-    totalSpots: 180,
-    activeEmployees: 42,
-    pendingRequests: 2,
-  },
-  parkings: [
-    {
-      id: 1,
-      name: "Siege Social - Sous-sol",
-      desc: "Accès via badge",
-      mapsLink: "#",
-      totalSpots: 50,
-      occupied: 45,
-    },
-    {
-      id: 2,
-      name: "Parking Extérieur Nord",
-      desc: "Zone grillagée",
-      mapsLink: "#",
-      totalSpots: 100,
-      occupied: 20,
-    },
-  ],
-  requests: [
-    {
-      id: 101,
-      employee: "Jean Dupont",
-      type: "PERMANENT",
-      parking: "Siege Social - Sous-sol",
-      date: "10/02/2026",
-      status: "PENDING",
-    },
-    {
-      id: 102,
-      employee: "Elliott Moiroud",
-      type: "PERMANENT",
-      parking: "Siege Social - Sous-sol",
-      date: "10/02/2026",
-      status: "PENDING",
-    },
-    {
-      id: 103,
-      employee: "Sophie Martin",
-      type: "TEMPORAIRE",
-      parking: "Parking Extérieur Nord",
-      date: "10/02/2026",
-      status: "AUTO-CONFIRMED",
-    },
-  ],
-  employees: [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      email: "jean@techcorp.com",
-      vehicles: [
-        { plate: "AB-123-CD", spot: "P1-12" },
-        { plate: "XY-999-ZZ", spot: null },
-      ],
-    },
-    {
-      id: 2,
-      name: "Elliott Moiroud",
-      email: "elliott@techcorp.com",
-      vehicles: [{ plate: "CD-456-EF", spot: "P2-04" }],
-    },
-    {
-      id: 3,
-      name: "Alice Martin",
-      email: "alice@techcorp.com",
-      vehicles: [],
-    },
-  ],
-};
+import { getEntrepriseIdFromToken, getUserNameFromToken, getUserEmailFromToken} from "@/lib/auth";
+import { X, Save } from "lucide-react";
 
-// Interface
-
+// --- Interfaces ---
 export interface VehicleInfo {
   plate: string;
   spot: string | null;
@@ -99,21 +21,23 @@ export interface Employee {
   email: string;
   vehicles: VehicleInfo[];
   isBoss: boolean;
+  spot: string | null;
 }
 
-interface Entreprise {
-  idEntreprise: number;
-  nomEntreprise: string;
-}
-
-interface Parking {
-  idParking: number;
+export interface Parking {
+  id: number;
   name: string;
   description: string;
   linkMaps: string;
-  entreprise?: Entreprise;
+  entrepriseId?: number;
+  entrepriseNom?: string;
+  totalSpots?: number;
+  occupied?: number;
+  pricing?: {
+    annual: number | string;
+    daily: number | string;
+  };
 }
-
 
 interface FormattedRequest {
   id: number;
@@ -134,20 +58,34 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("Admin");
   const [companyName, setCompanyName] = useState("Chargement...");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // États pour la modale de profil
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({
+    name: '',
+    surname: '',
+    mail: '',
+    password: ''
+  });
 
   useEffect(() => {
     const idEntreprise = getEntrepriseIdFromToken();
     const nameFromToken = getUserNameFromToken();
+    const userEmail = getUserEmailFromToken();
 
     if (nameFromToken) setUserName(nameFromToken);
+    
     if (!idEntreprise) {
-      console.error("Impossible de trouver l'ID de l'entreprise dans le token");
+      console.error("Impossible de trouver l'ID de l'entreprise");
       setIsLoading(false);
       return;
     }
+
     async function loadAllData() {
       try {
-        // On lance les 4 requêtes principales en parallèle
+        // On lance les 4 requêtes principales
         const [parkingsRes, employeesRes, requestsRes, entrepriseRes] = await Promise.all([
           fetchWithAuth(`/api/parking/getParkingByEntreprise/${idEntreprise}`),
           fetchWithAuth(`/api/users/entreprise/${idEntreprise}`),
@@ -155,44 +93,95 @@ export default function Dashboard() {
           fetchWithAuth(`/api/entreprise/getEntrepriseById/${idEntreprise}`)
         ]);
 
-        if (parkingsRes.ok) setParkings(await parkingsRes.json());
-        if (employeesRes.ok) {
-          const rawEmployees = await employeesRes.json();
-          
-          // On formate les données de l'API pour coller à l'interface Employee attendue par l'onglet
-          const formattedEmployees: Employee[] = rawEmployees.map((user: any) => ({
-            id: user.idUser,
-            name: `${user.name} ${user.surname}`,
-            email: user.mail,
-            vehicles: [] ,
-            isBoss: user.status === true || user.status === 1 || user.role === 1
-          }));
+        let rawEmployees: any[] = [];
+        let rawRequests: any[] = [];
 
-          formattedEmployees.sort((a, b) => (a.isBoss === b.isBoss ? 0 : a.isBoss ? -1 : 1));
-
-          setEmployees(formattedEmployees);
-        }
+        // 1. Traitement Entreprise
         if (entrepriseRes.ok) {
           const entrepriseData = await entrepriseRes.json();
           if (entrepriseData.nom) setCompanyName(entrepriseData.nom);
         }
+
+        // 2. Traitement Demandes (pour l'affichage dans les cartes employés après)
         if (requestsRes.ok) {
-          const data = await requestsRes.json();
-          
-          const formattedRequests = data.map((req: any) => ({
+          rawRequests = await requestsRes.json();
+          setRequests(rawRequests.map((req: any) => ({
             id: req.idDemandePlacePermanante,
             employee: `${req.user.name} ${req.user.surname}`,
             status: req.etat === 1 ? "PENDING" : (req.etat === 2 ? "APPROVED" : "REJECTED"),
             type: "PERMANENT",
             date: "Aujourd'hui",
             parking: req.place?.parking?.name || "Parking non spécifié",
-          }));
+          })));
+        }
 
-          setRequests(formattedRequests);
+        // 3. Traitement Employés & Profil
+        if (employeesRes.ok) {
+          rawEmployees = await employeesRes.json();
+          
+          // IDENTIFICATION DU PROFIL (Lien avec le token sub/email)
+          const me = rawEmployees.find((u: any) => u.mail === userEmail);
+          if (me) setCurrentUser(me);
+
+          const vehiclesPromises = rawEmployees.map(user => 
+            fetchWithAuth(`/api/vehicule/getVehiculeByUserId/${user.idUser}`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
+
+          const allVehiclesArrays = await Promise.all(vehiclesPromises);
+
+          const formattedEmployees: Employee[] = rawEmployees.map((user: any, index: number) => {
+            const approvedRequest = rawRequests.find((req: any) => req.user?.idUser === user.idUser && req.etat == 2);
+            let spotName = approvedRequest?.place ? `Place n°${approvedRequest.place.idPlace || approvedRequest.place.id}` : null;
+
+            return {
+              id: user.idUser,
+              name: `${user.name} ${user.surname}`,
+              email: user.mail,
+              isBoss: user.status === true || user.role === 1,
+              vehicles: (allVehiclesArrays[index] || []).map((veh: any) => ({
+                plate: veh.immatriculation || "Inconnu",
+                spot: null 
+              })),
+              spot: spotName
+            };
+          });
+
+          formattedEmployees.sort((a, b) => (a.isBoss === b.isBoss ? 0 : a.isBoss ? -1 : 1));
+          setEmployees(formattedEmployees);
+        }
+
+        // 4. Traitement Parkings
+        if (parkingsRes.ok) {
+          const rawParkings = await parkingsRes.json();
+          const placesPromises = rawParkings.map((p: any) => 
+            fetchWithAuth(`/api/place/getPlaceByParkingId/${p.idParking || p.id}`)
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
+
+          const allPlacesArrays = await Promise.all(placesPromises);
+
+          setParkings(rawParkings.map((parking: any, index: number) => {
+            const places = allPlacesArrays[index] || [];
+            return {
+              id: parking.idParking || parking.id,
+              name: parking.name,
+              description: parking.description,
+              linkMaps: parking.linkMaps,
+              totalSpots: places.length,
+              occupied: places.filter((pl: any) => pl.etat === true || pl.user !== null).length,
+              pricing: { 
+                annual: places[0]?.tarifAnnuel || "--", 
+                daily: places[0]?.tarifJournalier || "--" 
+              }
+            };
+          }));
         }
 
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error("Erreur globale:", error);
       } finally {
         setIsLoading(false);
       }
@@ -201,53 +190,78 @@ export default function Dashboard() {
     loadAllData();
   }, []);
 
-  // On recalcule les stats avec la longueur réelle de la liste
+  // Pré-remplissage dès que la modale s'ouvre
+  useEffect(() => {
+    if (isProfileModalOpen && currentUser) {
+      setProfileFormData({
+        name: currentUser.name || '',
+        surname: currentUser.surname || '',
+        mail: currentUser.mail || '',
+        password: ''
+      });
+    }
+  }, [isProfileModalOpen, currentUser]);
+
   const dynamicStats = {
     totalParkings: parkings.length,
-    totalSpots: "--",
-    activeEmployees: employees.length-1,
+    totalSpots: parkings.reduce((acc, p) => acc + (p.totalSpots || 0), 0), 
+    activeEmployees: employees.length > 0 ? employees.length - 1 : 0,
     pendingRequests: requests.filter((r) => r.status === "PENDING").length,
   };
 
-  // Gestion des actions sur les demandes (PATCH)
+  // --- ACTIONS ---
   const handleRequestAction = async (id: number, action: string) => {
-    try {
-      // On vérifie que l'action est correcte avant l'appel
-      let apiAction = "";
-      if (action === "accept" || action === "accepter") {
-        apiAction = "accepter";
-      } else if (action === "reject" || action === "refuser") {
-        apiAction = "refuser";
-      } else {
-        console.error("Action inconnue :", action);
-        return;
-      }
-      const response = await fetchWithAuth(`/api/demandePermanante/${id}/${apiAction}`, {
-        method: 'PATCH'
-      });
+    let apiAction = action === "accept" || action === "accepter" ? "accepter" : "refuser";
+    const res = await fetchWithAuth(`/api/demandePermanante/${id}/${apiAction}`, { method: 'PATCH' });
+    if (res.ok) setRequests(prev => prev.map(req => req.id === id ? { ...req, status: apiAction === "accepter" ? "APPROVED" : "REJECTED" } : req));
+  };
 
-      if (response.ok) {
-        setRequests(prev => prev.map(req => 
-          req.id === id ? { ...req, status: action === "accepter" ? "APPROVED" : "REJECTED" } : req
-        ));
-        alert(`Demande ${action}ée avec succès.`);
+  const handleDeleteParking = async (id: number) => {
+    const res = await fetchWithAuth(`/api/parking/deleteParking/${id}`, { method: 'DELETE' });
+    if (res.ok) setParkings(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleGenerateSpots = async (parkingId: number, data: any) => {
+    const res = await fetchWithAuth('/api/place/generer', { method: 'POST', body: JSON.stringify({ parkingId, ...data }) });
+    if (res.ok) window.location.reload();
+  };
+
+  const handleEditParking = async (id: number, updatedData: any) => {
+    const res = await fetchWithAuth(`/api/parking/editParking/${id}`, { method: 'PUT', body: JSON.stringify({ ...updatedData, entrepriseId: getEntrepriseIdFromToken() }) });
+    if (res.ok) setParkings(prev => prev.map(p => p.id === id ? { ...p, ...updatedData } : p));
+  };
+
+  const handleAddParking = async (newData: any) => {
+    const res = await fetchWithAuth('/api/parking/addParking', { method: 'POST', body: JSON.stringify({ ...newData, entrepriseId: getEntrepriseIdFromToken() }) });
+    if (res.ok) window.location.reload();
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setIsSavingProfile(true);
+
+    const payload = {
+      ...currentUser,
+      name: profileFormData.name.trim() || currentUser.name,
+      surname: profileFormData.surname.trim() || currentUser.surname,
+      mail: profileFormData.mail.trim() || currentUser.mail,
+      password: profileFormData.password !== '' ? profileFormData.password : currentUser.password 
+    };
+
+    try {
+      const res = await fetchWithAuth(`/api/users/${currentUser.idUser}`, { method: 'PUT', body: JSON.stringify(payload) });
+      if (res.ok) {
+        setIsProfileModalOpen(false);
+        window.location.reload(); 
       }
-    } catch (error) {
-      alert("Erreur lors de l'action sur la demande.");
-    }
+    } catch (error) { console.error(error); } finally { setIsSavingProfile(false); }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      {/* 1. Sidebar Component */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        companyName={companyName}
-      />
-
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} companyName={companyName} />
       <main className="ml-64 p-8">  
-        {/* 2. Header  */}
         <header className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold text-slate-800">
             {activeTab === "overview" && "Tableau de bord"}
@@ -255,39 +269,51 @@ export default function Dashboard() {
             {activeTab === "employees" && "Annuaire Salariés"}
           </h2>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">Bonjour, {userName}</span>
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold uppercase">
-              {userName.charAt(0)}
-            </div>
+            <span className="text-sm text-gray-500">
+              Bonjour, {currentUser ? `${currentUser.name}` : "Patron"}
+            </span>
+            <button 
+              onClick={() => setIsProfileModalOpen(true)} 
+              className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold uppercase hover:bg-blue-200 transition hover:scale-105 shadow-sm"
+            >
+              {currentUser ? currentUser.name.charAt(0) : userName.charAt(0)}
+            </button>
           </div>
         </header>
 
-        {/* 3. Conditional Content */}
-        {isLoading ? (
-          <div className="flex justify-center p-10">
-            Chargement des données...
-          </div>
-        ) : (
+        {isLoading ? <div className="flex justify-center p-10">Chargement...</div> : (
           <>
-            {/* Vue d'ensemble avec les vraies stats */}
-            {activeTab === "overview" && (
-              <OverviewTab
-                stats={dynamicStats}
-                requests={requests}
-                onRequestAction={handleRequestAction}
-              />
-            )}
-
-            {/* Onglet Parkings */}
-            {activeTab === "parkings" && <ParkingsTab parkings={DATA.parkings} />}
-
-            {/* Onglet Salariés */}
-            {activeTab === "employees" && (
-              <EmployeesTab employees={employees} />
-            )}
+            {activeTab === "overview" && <OverviewTab stats={dynamicStats} requests={requests} onRequestAction={handleRequestAction} />}
+            {activeTab === "parkings" && <ParkingsTab parkings={parkings} onDelete={handleDeleteParking} onEditSubmit={handleEditParking} onAddSubmit={handleAddParking} onGenerateSubmit={handleGenerateSpots} />}
+            {activeTab === "employees" && <EmployeesTab employees={employees} entrepriseId={getEntrepriseIdFromToken() || 0} companyName={companyName} />}
           </>
         )}
       </main>
+
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-slate-800">Mon Profil</h2>
+              <button onClick={() => setIsProfileModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleProfileSubmit} className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" value={profileFormData.name} onChange={(e) => setProfileFormData({...profileFormData, name: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Prénom" required />
+                <input type="text" value={profileFormData.surname} onChange={(e) => setProfileFormData({...profileFormData, surname: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nom" required />
+              </div>
+              <input type="email" value={profileFormData.mail} onChange={(e) => setProfileFormData({...profileFormData, mail: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Email" required />
+              <input type="password" value={profileFormData.password} onChange={(e) => setProfileFormData({...profileFormData, password: e.target.value})} className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Nouveau mot de passe (optionnel)" />
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setIsProfileModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Annuler</button>
+                <button type="submit" disabled={isSavingProfile} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition font-medium text-sm disabled:opacity-70">
+                  {isSavingProfile ? 'Envoi...' : <><Save size={16} /> Mettre à jour</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
