@@ -3,6 +3,7 @@
 import { useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/client";
+import Cookies from "js-cookie";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -14,43 +15,44 @@ export default function AuthCallback() {
       if (processed.current) return;
       processed.current = true;
 
-      // Vérifier immédiatement s'il y a une session
       const { data: { session } } = await supabase.auth.getSession();
-      
-      //console.log("🔍 Session check:", !!session, session?.user?.email);
 
       if (session) {
         try {
-          //console.log("✅ Session trouvée:", session.user.email);
-          
-          // Récupérer l'entrepriseId du sessionStorage
           const entrepriseId = sessionStorage.getItem('enterprise_id');
-          //console.log("🏢 Enterprise ID:", entrepriseId);
 
-          const response = await fetch(`https://parking-manager-api.oups.net/api/auth/social-login`, {
+          const response = await fetch(`http://localhost:8080/api/auth/social-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               mail: session.user.email,
               name: session.user.user_metadata?.full_name || "Utilisateur",
               surname: session.user.user_metadata?.last_name || "Google",
-              entrepriseId: entrepriseId,
+              entrepriseId: entrepriseId ? parseInt(entrepriseId) : null,
             })
           });
 
-          //console.log("🚀 API Response:", response.status);
-          
-          // Nettoyer après utilisation
+          if (response.ok) {
+            // ✅ IMPORTANT : On récupère le JSON { token: "...", idUser: ... }
+            const data = await response.json();
+
+            // ✅ On ne stocke QUE la chaîne du token dans le cookie
+            // On retire les guillemets potentiels au cas où
+            const pureToken = data.token.replace(/"/g, "");
+            Cookies.set("session_token", pureToken, { expires: 1 });
+
+            console.log("✅ Token récupéré sans fioritures");
+          } else {
+            console.error("❌ Erreur API Java:", response.status);
+          }
+
           sessionStorage.removeItem('enterprise_id');
-          
           router.push("/salarier");
         } catch (err) {
-          console.error("Erreur API:", err);
-          sessionStorage.removeItem('enterprise_id');
+          console.error("Erreur:", err);
           router.push("/salarier");
         }
       } else {
-        console.error("❌ Pas de session trouvée");
         router.push("/signIn");
       }
     };
@@ -59,10 +61,10 @@ export default function AuthCallback() {
   }, [router, supabase]);
 
   return (
-    <div className="flex h-screen items-center justify-center">
+    <div className="flex h-screen items-center justify-center bg-slate-900 text-white">
       <div className="text-center">
-        <p className="text-lg font-semibold">Finalisation de la connexion...</p>
-        <p className="text-sm text-gray-500">Veuillez patienter.</p>
+        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent mx-auto"></div>
+        <p className="text-lg font-semibold">Connexion à la base de données...</p>
       </div>
     </div>
   );

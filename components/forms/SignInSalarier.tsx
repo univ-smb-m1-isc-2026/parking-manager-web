@@ -18,7 +18,7 @@ export default function SignInSalarier() {
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: "https://parking-manager.oups.net/callback",
+        redirectTo: "http://localhost:3000/callback",
       },
     });
   };
