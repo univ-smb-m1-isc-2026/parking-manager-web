@@ -72,7 +72,25 @@ export default function SalarierDashboard() {
           ]);
 
           setVehicles(Array.isArray(vehiclesRes) ? vehiclesRes : []);
-          setParkings(Array.isArray(parkingsRes) ? parkingsRes : []);
+          
+          // Charger les places pour chaque parking pour calculer l'occupation
+          const rawParkings = Array.isArray(parkingsRes) ? parkingsRes : [];
+          const placesPromises = rawParkings.map((p: any) => 
+            fetch(`http://localhost:8080/api/place/getPlaceByParkingId/${p.idParking || p.id}`, { headers })
+              .then(res => res.ok ? res.json() : [])
+              .catch(() => [])
+          );
+          const allPlacesArrays = await Promise.all(placesPromises);
+          
+          const parkingsWithOccupancy = rawParkings.map((parking: any, index: number) => {
+            const places = allPlacesArrays[index] || [];
+            return {
+              ...parking,
+              totalSpots: places.length,
+              occupied: places.filter((pl: any) => pl.etat === true || pl.user !== null).length,
+            };
+          });
+          setParkings(parkingsWithOccupancy);
           
           // Mapper les places pour correspondre à l'interface PlaceAssignee
           const placesMapped = Array.isArray(placesRes) ? placesRes.map((p: any) => ({
