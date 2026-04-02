@@ -20,13 +20,13 @@ import { Button } from "@/components/ui/button";
 const styles = {
   container: "w-full max-w-md",
   header: "space-y-1",
-  title: "text-3xl font-bold text-pink-500",
+  title: "text-3xl font-bold text-blue-600",
   content: "space-y-4",
   fieldGroup: "space-y-2",
   footer: "flex flex-col",
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
-  link: "ml-2 text-pink-500",
+  link: "ml-2 text-blue-600",
   error: "text-xs text-red-600",
 };
 
@@ -46,7 +46,7 @@ export function SignupForm() {
 
     try {
       const response = await fetch(
-        "https://parking-manager-api.oups.net/api/auth/login-entreprise",
+        "https://parking-manager-api.oups.net/api/auth/register-entreprise",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -78,65 +78,65 @@ export function SignupForm() {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className={styles.header}>
-            <CardTitle className={styles.title}>Sign Up</CardTitle>
+            <CardTitle className={styles.title}>Inscrivez-vous</CardTitle>
             <CardDescription>
-              Enter your details to create a new account
+              Complétez les champs pour créer votre compte
             </CardDescription>
           </CardHeader>
 
           <CardContent className={styles.content}>
             <div className={styles.fieldGroup}>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Prénom</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
-                placeholder="name"
+                placeholder="Prénom"
               />
             </div>
 
             <div className={styles.fieldGroup}>
-              <Label htmlFor="surname">Surname</Label>
+              <Label htmlFor="surname">Nom</Label>
               <Input
                 id="surname"
                 value={surname}
                 onChange={(e) => setSurname(e.target.value)}
                 type="text"
-                placeholder="surname"
+                placeholder="Nom"
               />
             </div>
 
             <div className={styles.fieldGroup}>
-              <Label htmlFor="nomEntreprise">Name entreprise</Label>
+              <Label htmlFor="nomEntreprise">Nom de votre entreprise</Label>
               <Input
                 id="nomEntreprise"
                 value={nomEntreprise}
                 onChange={(e) => setNomEntreprise(e.target.value)}
                 type="text"
-                placeholder="Name enterprise"
+                placeholder="Nom de votre entreprise"
               />
             </div>
 
             <div className={styles.fieldGroup}>
-              <Label htmlFor="mail">Mail</Label>
+              <Label htmlFor="mail">Email</Label>
               <Input
                 id="mail"
                 value={mail}
                 onChange={(e) => setMail(e.target.value)}
                 type="email"
-                placeholder="name@example.com"
+                placeholder="nom@example.com"
               />
             </div>
 
             <div className={styles.fieldGroup}>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mot de passe</Label>
               <Input
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 type="password"
-                placeholder="password"
+                placeholder="Mot de passe"
               />
             </div>
 
@@ -145,15 +145,15 @@ export function SignupForm() {
 
           <CardFooter className={styles.footer}>
             <Button type="submit" className={styles.button}>
-              Sign Up
+              S'inscrire
             </Button>
           </CardFooter>
         </Card>
 
         <div className={styles.prompt}>
-          Have an account?
+          Déjà un compte ?
           <Link className={styles.link} href="signIn">
-            Sign In
+            Se connecter
           </Link>
         </div>
       </form>

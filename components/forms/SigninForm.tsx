@@ -20,13 +20,13 @@ import { Button } from "@/components/ui/button";
 const styles = {
   container: "w-full max-w-md",
   header: "space-y-1",
-  title: "text-3xl font-bold text-pink-500",
+  title: "text-3xl font-bold text-blue-600",
   content: "space-y-4",
   fieldGroup: "space-y-2",
   footer: "flex flex-col",
   button: "w-full",
   prompt: "mt-4 text-center text-sm",
-  link: "ml-2 text-pink-500",
+  link: "ml-2 text-blue-600",
   error: "text-xs text-red-600 font-medium",
 };
 
@@ -84,9 +84,9 @@ export function SigninForm() {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className={styles.header}>
-            <CardTitle className={styles.title}>Sign In</CardTitle>
+            <CardTitle className={styles.title}>Se connecter</CardTitle>
             <CardDescription>
-              Enter your details to sign in to your account
+              Complétez les champs pour vous connecter
             </CardDescription>
           </CardHeader>
 
@@ -103,7 +103,7 @@ export function SigninForm() {
             </div>
 
             <div className={styles.fieldGroup}>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mot de passe</Label>
               <Input
                 id="password"
                 name="password"
@@ -122,15 +122,15 @@ export function SigninForm() {
 
           <CardFooter className={styles.footer}>
             <Button type="submit" className={styles.button} disabled={loading}>
-              {loading ? "Connexion..." : "Sign In"}
+              {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </CardFooter>
         </Card>
 
         <div className={styles.prompt}>
-          Don't have an account?
+          Pas encore inscrit ?
           <Link className={styles.link} href="/signUp">
-            Sign Up
+            S'inscrire
           </Link>
         </div>
       </form>
