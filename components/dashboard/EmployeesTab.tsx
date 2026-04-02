@@ -1,8 +1,8 @@
 'use client';
 
-import { Mail, Car, Star } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Car, Star, X, Send } from 'lucide-react';
 
-// Nouvelle structure : Un véhicule a une plaque et potentiellement une place
 export interface VehicleInfo {
   plate: string;
   spot: string | null; // null = pas de place attribuée pour ce véhicule
@@ -18,15 +18,54 @@ export interface Employee {
 
 interface EmployeesTabProps {
   employees: Employee[];
+  entrepriseId: number;
+  companyName: string;
 }
 
-export function EmployeesTab({ employees }: EmployeesTabProps) {
+export function EmployeesTab({ employees, entrepriseId, companyName }: EmployeesTabProps) {
+  // États pour gérer la modale d'invitation
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+
+    const inviteLink = `https://parking-manager.oups.net/signInSalarier?entrepriseId=${entrepriseId}`;
+
+    // --- OPTION 1 : Simulation avec l'application mail locale (mailto:) ---
+    const subject = encodeURIComponent(`Invitation à rejoindre Parking Manager - ${companyName}`);
+    const body = encodeURIComponent(
+`Bonjour,
+
+Le manager de ${companyName} vous invite à rejoindre la plateforme Parking Manager pour gérer vos accès au parking de l'entreprise.
+
+Cliquez sur ce lien pour créer votre compte :
+${inviteLink}
+
+À très vite sur Parking Manager !`
+    );
+    
+    // Ouvre le client mail par défaut (Outlook, Mail, etc.)
+    window.location.href = `mailto:${inviteEmail}?subject=${subject}&body=${body}`;
+
+    // On simule un petit temps de chargement pour le style
+    setTimeout(() => {
+      setIsSending(false);
+      setIsModalOpen(false);
+      setInviteEmail('');
+    }, 800);
+  };
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <div className="p-6 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-bold text-lg">Liste des salariés</h3>
-        <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition">
-          <Mail size={18} /> Inviter un salarié
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition font-medium text-sm shadow-sm"
+        >
+          <Mail size={16} /> Inviter un salarié
         </button>
       </div>
       <div className="overflow-x-auto">
@@ -104,6 +143,56 @@ export function EmployeesTab({ employees }: EmployeesTabProps) {
           </tbody>
         </table>
       </div>
+
+      {/* --- LA FENÊTRE MODALE D'INVITATION --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-slate-800">Inviter un collaborateur</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-sm text-slate-500 mb-6">
+              Un email contenant un lien d'inscription sécurisé sera préparé pour rejoindre <span className="font-bold text-slate-700">{companyName}</span>.
+            </p>
+
+            <form onSubmit={handleInvite} className="flex flex-col gap-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Adresse email du salarié</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="jean.dupont@entreprise.com" 
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition font-medium text-sm"
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSending}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition font-medium text-sm shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSending ? 'Préparation...' : <><Send size={16} /> Créer l'invitation</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

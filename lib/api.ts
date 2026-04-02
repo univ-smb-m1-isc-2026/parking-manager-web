@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 
 const API_BASE_URL = 'https://parking-manager-api.oups.net';
+//const API_BASE_URL = 'http://localhost:8080';
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const token = Cookies.get('session_token');

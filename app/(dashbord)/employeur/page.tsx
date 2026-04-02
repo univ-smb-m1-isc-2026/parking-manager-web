@@ -285,7 +285,12 @@ export default function Dashboard() {
 
             {/* Onglet Salariés */}
             {activeTab === "employees" && (
-              <EmployeesTab employees={employees} />
+              <EmployeesTab
+                employees={employees} 
+                // On passe les deux nouvelles props ici !
+                entrepriseId={getEntrepriseIdFromToken() || 0} 
+                companyName={companyName}
+              />
             )}
           </>
         )}
