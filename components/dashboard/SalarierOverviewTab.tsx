@@ -109,7 +109,7 @@ export function SalarierOverviewTab({ places, demandes }: SalarierOverviewTabPro
           Mes demandes
         </h3>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-96">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase">
               <tr>
